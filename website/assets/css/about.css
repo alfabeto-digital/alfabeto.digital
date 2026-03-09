@@ -1,0 +1,48 @@
+.main-view {
+    display: grid;
+    grid-template-rows: 600px 600px 600px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    min-height: 87vh;
+  }
+  
+  .main-view > div {
+    height: 600px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(3px);
+    border-radius: 15px;
+    box-shadow: 8px 8px 15px rgba(0,0,0,0.2);
+    transition: box-shadow 0.3s ease;
+    overflow: auto;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  
+  .main-view > div:hover {
+    box-shadow: 
+      inset 8px 8px 15px rgba(0,0,0,0.2),
+      inset -8px -8px 15px rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+  }
+  
+  .whoAreWe { grid-area: 1 / 1 / 2 / 4; }
+  .animation { grid-area: 2 / 1; }
+  .ourPurpose { grid-area: 2 / 2; }
+  .contact { grid-area: 2 / 3; }
+  .donate { grid-area: 3 / 1 / 4 / 3; }
+  .test { grid-area: 3 / 3; }
+  
+  @media (max-width: 768px) {
+    .main-view {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      grid-auto-rows: 600px;
+    }
+  
+    .main-view > div {
+      height: 600px;
+      grid-column: 1 !important;
+      grid-row: auto !important;
+      width: 100%;
+    }
+  }

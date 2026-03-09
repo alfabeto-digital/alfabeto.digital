@@ -1,0 +1,56 @@
+/*Treminal font: Terminal, numbers, dates, prices, equations and symbols*/
+@font-face {
+  font-family: 'GohuFont';
+  src: url('../fonts/Gohu/GohuFont11NerdFont-Regular.ttf') format('truetype');
+}
+
+/*Primary font: Titles, body text, paragraphs, section titles and headings*/
+@font-face {
+  font-family: 'ShureTechMono';
+  src: url('../fonts/ShareTechMono/ShureTechMonoNerdFont-Regular.ttf') format('truetype');
+}
+
+/*Secondary font: Short texts, subtitles, cites, emphazise, contrast*/
+@font-face {
+  font-family: 'Monofur';
+  src: url('../fonts/Monofur/MonofurNerdFont-Regular.ttf') format('truetype');
+}
+
+/*Accesibility font: Body text*/
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('../fonts/OpenDyslexic/OpenDyslexicNerdFont-Regular.otf') format('opentype');
+}
+
+body {
+  font-family: 'ShureTechMono';
+  background: linear-gradient(0deg, #f9f9f9, #ffffffc5), url('../images/bg-texture.jpg');
+  background-size: cover;
+  background-repeat: no-repeat;
+  color: #333;
+  min-height: 100vh;
+  margin: 0;
+  padding: 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dynamic-content {
+  height: 87vh;
+  background: rgba(255,255,255,0.4);
+  backdrop-filter: blur(3px);
+  border-radius: 15px;
+  box-shadow: 8px 8px 15px rgba(0,0,0,0.2);
+  margin: 6px 0;
+  overflow-y: auto;
+  transition: box-shadow 0.3s ease;
+  z-index: 1;
+}
+
+.dynamic-content:hover {
+  box-shadow: 
+    inset 8px 8px 15px rgba(0,0,0,0.2), 
+    inset -8px -8px 15px rgba(255, 255, 255, 0.8);
+}

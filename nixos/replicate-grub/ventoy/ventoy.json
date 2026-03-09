@@ -1,0 +1,15 @@
+{
+    "theme": {
+        "file": [
+            "/ventoy/theme/replicate/theme.txt"
+        ],
+        "default_file": 0,
+        "gfxmode": "max",
+        "display_mode": "GUI",
+        "serial_param": "--unit=0 --speed=9600",
+        "fonts": [
+            "/ventoy/theme/replicate/ShureTechMonoNerdFont-Regular.ttf"           
+        ],
+        "images": []
+    }
+}

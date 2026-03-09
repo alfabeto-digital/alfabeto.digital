@@ -1,0 +1,44 @@
+# Global properties
+title-text: ""
+desktop-image: "background.png"
+desktop-color: "#242424"
+terminal-font: "Shure Tech Mono Nerd Font Regular 32"
+terminal-box: "terminal_box_*.png"
+terminal-left: "0"
+terminal-top: "0"
+terminal-width: "100%"
+terminal-height: "100%"
+terminal-border: "0"
+
++ boot_menu {
+  left = 6%
+  top = 16%
+  width = 54%
+  height = 62%
+  item_font = "Shure Tech Mono Nerd Font Regular 32"
+  item_color = "#c8612a"
+  selected_item_color = "#ff9966"
+  item_height = 48
+  item_padding = 8
+  item_spacing = 6
+}
+
++ label {
+  left = 0
+  top = 90%
+  width = 100%
+  align = "center"
+  text = "Use ↑ and ↓ keys to change selection, Enter to confirm"
+  color = "#c8612a"
+  font = "Shure Tech Mono Nerd Font Regular 32"
+}
+
++ label {
+  left = 0
+  top = 93%
+  width = 100%
+  align = "center"
+  text = "F1: Help  F2: Memdisk  F3: Treeview  F4: Localboot  F5: Tools"
+  color = "#c8612a"
+  font = "Shure Tech Mono Nerd Font Regular 32"
+}

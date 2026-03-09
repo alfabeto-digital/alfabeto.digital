@@ -1,0 +1,5 @@
+# Ignore ISO disk images
+*.iso
+
+# Ignore GIMP files
+*.xcf
