@@ -1,5 +1,5 @@
 # alfabeto.digital
-## Conspiratorio popular de la soberanía
+## Conspiratorios populares de las soberanías
 
 ```
 .
