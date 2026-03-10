@@ -1,21 +1,19 @@
 {
-  description = "alfabeto.digital: Conspiratorios populares de las soberanías";
+  description = "alfabeto.digital: conspiratorios populares de las soberanías";
 
-  inputs =
-    let
-      cfg = import ./config.nix;
-      v   = cfg.nixos_channel_version;
-    in {
-      nixpkgs.url = "github:nixos/nixpkgs/nixos-${v}";
-      home-manager = {
-        url = "github:nix-community/home-manager/release-${v}";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
-      sops-nix = {
-        url = "github:Mic92/sops-nix";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
+  # Flake inputs must be static — the version is hardcoded here and must be
+  # kept in sync with nixos_channel_version in config.nix manually.
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    home-manager = {
+      url = "github:nix-community/home-manager/release-25.11";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
 
   outputs = { self, nixpkgs, home-manager, sops-nix, ... }:
   let
