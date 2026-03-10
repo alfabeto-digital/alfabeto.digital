@@ -1,7 +1,8 @@
 { pkgs, admin_username, ... }: {
-  home.username = admin_username;
+
+  home.username      = admin_username;
   home.homeDirectory = "/home/${admin_username}";
-  home.stateVersion = "24.11";
+  home.stateVersion  = (import ../config.nix).nixos_state_version;
 
   home.packages = with pkgs; [
     neovim
@@ -18,9 +19,9 @@
   programs.bash = {
     enable = true;
     shellAliases = {
-      ll = "ls -la";
-      update-nixos = "sudo nixos-rebuild switch --flake .#$(hostname)";
-      history = "history | tac | fzf";
+      ll           = "ls -la";
+      update-nixos = "sudo nixos-rebuild switch --flake /etc/nixos#$(hostname)";
+      history      = "history | tac | fzf";
     };
   };
 }
