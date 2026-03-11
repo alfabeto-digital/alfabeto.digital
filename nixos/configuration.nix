@@ -151,7 +151,9 @@ in {
   i18n.defaultLocale = cfg.locale_lang;
   i18n.extraLocaleSettings = {
     LC_MESSAGES       = cfg.locale_lang;
-    LC_COLLATE        = cfg.locale_collate;
+    # LC_COLLATE = cfg.locale_collate is intentionally omitted:
+    # "C" is a built-in glibc locale that cannot be compiled and does
+    # not need to appear in extraLocaleSettings.
     LC_TIME           = cfg.locale_time;
     LC_NUMERIC        = cfg.locale_numeric;
     LC_MONETARY       = cfg.locale_monetary;
