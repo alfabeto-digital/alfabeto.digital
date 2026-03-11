@@ -249,12 +249,15 @@ in {
     description = "Unlock LUKS data disk (nvme1)";
     wantedBy    = [ "multi-user.target" ];
     before      = [ "postgresql.service" ];
+    after       = [ "systemd-udev-settle.service" ];
+    wants       = [ "systemd-udev-settle.service" ];
     unitConfig.ConditionPathExists = "!/dev/mapper/data-disk";
     serviceConfig = {
       Type            = "oneshot";
       RemainAfterExit = true;
     };
     script = ''
+      ${pkgs.udev}/bin/udevadm settle
       ${pkgs.cryptsetup}/bin/cryptsetup open \
         /dev/disk/by-uuid/${cfg.data_disk_uuid} \
         data-disk \
@@ -322,28 +325,17 @@ in {
 
   virtualisation.docker.enable = true;
 
-  # Creates /run/cloudflare.env from the sops secret at boot.
-  # Written to /run (tmpfs) so it never touches disk unencrypted.
-  systemd.services.cloudflare-env = {
-    description     = "Write Cloudflare tunnel env file from sops secret";
-    wantedBy        = [ "multi-user.target" ];
-    before          = [ "docker-cloudflare.service" ];
-    unitConfig.ConditionPathExists = "!/run/cloudflare.env";
-    serviceConfig = {
-      Type            = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      TOKEN=$(cat ${config.sops.secrets.cloudflare_token.path})
-      printf 'TUNNEL_TOKEN=%s' "$TOKEN" > /run/cloudflare.env
-      chmod 400 /run/cloudflare.env
-    '';
-  };
-
-  # Ensure docker-cloudflare waits for the env file to exist.
+  # Write /run/cloudflare.env just before the container starts.
+  # ExecStartPre runs in the same service context as the container,
+  # so the file is guaranteed to exist when docker reads it.
   systemd.services.docker-cloudflare = {
-    after    = [ "cloudflare-env.service" ];
-    requires = [ "cloudflare-env.service" ];
+    serviceConfig.ExecStartPre = [
+      ""   # clear NixOS default pre-start (keep docker pull behavior)
+      (pkgs.writeShellScript "cloudflare-env-write" ''
+        printf 'TUNNEL_TOKEN=%s' "$(cat ${config.sops.secrets.cloudflare_token.path})"           > /run/cloudflare.env
+        chmod 400 /run/cloudflare.env
+      '')
+    ];
   };
 
   virtualisation.oci-containers = {
