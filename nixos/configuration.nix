@@ -509,4 +509,5 @@ in {
   # Sourced from config.nix — must match the NixOS version used during
   # installation and must never be changed afterwards.
   system.stateVersion = cfg.nixos_state_version;
+ }
 }
