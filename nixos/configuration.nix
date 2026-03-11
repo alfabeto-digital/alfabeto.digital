@@ -1,7 +1,7 @@
 ###################################################################
 #
 # alfabeto.digital
-# Nicolás Malpic Forero
+# nicolás malpic forero
 #
 ###################################################################
 #
@@ -315,8 +315,7 @@ in {
     dataDir  = "${dataPath}/postgresql";
     ensureDatabases = [ cfg.db_name ];
     ensureUsers = [{
-      name              = cfg.db_username;
-      ensureDBOwnership = true;
+      name = cfg.db_username;
     }];
     authentication = lib.mkForce ''
       local all postgres peer
@@ -339,8 +338,8 @@ in {
     };
     script = ''
       DB_PASSWORD=$(cat ${config.sops.secrets.db_password.path})
-      ${config.services.postgresql.package}/bin/psql -c \
-        "ALTER USER \"${cfg.db_username}\" WITH PASSWORD '$DB_PASSWORD';"
+      ${config.services.postgresql.package}/bin/psql -c         "ALTER USER \"${cfg.db_username}\" WITH PASSWORD '$DB_PASSWORD';"
+      ${config.services.postgresql.package}/bin/psql -c         "GRANT ALL PRIVILEGES ON DATABASE \"${cfg.db_name}\" TO \"${cfg.db_username}\";"
     '';
   };
 
