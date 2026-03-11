@@ -39,10 +39,12 @@
 #       This lets the system unlock the disk automatically at boot
 #       while the emergency passphrase from step (a) remains as backup:
 #
-#         LUKS_KEY=$(sudo sops --decrypt --extract '["luks_data_key"]' \
-#           ./secrets/secrets.yaml)
-#         echo "$LUKS_KEY" | cryptsetup luksAddKey /dev/nvme1n1
-#         (enter the emergency passphrase from step (a) when prompted)
+#         LUKS_KEY=$(sops --decrypt ./secrets/secrets.yaml \
+#           | grep 'luks_data_key' | awk -F': ' '{print $2}' | tr -d '"')
+#         echo -n "$LUKS_KEY" > /tmp/luks.key
+#         truncate -s -1 /tmp/luks.key
+#         cryptsetup luksAddKey /dev/nvme1n1 /tmp/luks.key
+#         rm /tmp/luks.key
 #         unset LUKS_KEY
 #
 #       To verify both key slots are enrolled:
@@ -52,6 +54,8 @@
 #      mkdir -p /etc/secrets/initrd
 #      ssh-keygen -t ed25519 -N "" \
 #        -f /etc/secrets/initrd/ssh_host_ed25519_key
+#      echo "ssh-ed25519 AAAA... user@host" > /etc/secrets/initrd/authorized_keys
+#      chmod 600 /etc/secrets/initrd/authorized_keys
 #    This file must exist before the first nixos-rebuild.
 #
 # 4. Generate the age key and encrypt secrets:
@@ -65,8 +69,7 @@
 #      rm ./secrets/secrets.plain
 #
 # 5. Build:
-#      nixos-rebuild switch --flake \
-#        .#$(nix eval --raw 'import ./config.nix'.hostname)
+#      nixos-rebuild switch --flake /etc/nixos#alfabetodigital
 #
 # REMOTE LUKS UNLOCK (after reboot):
 #   Connect from your authorized machine:
@@ -81,8 +84,8 @@ let
   cfg = import ./config.nix;
 
   # Derived paths — computed once, used throughout.
-  dataPath    = "${cfg.data_mount_point}/${cfg.db_name}";    # /mnt/data/quipu
-  storagePath = "${cfg.storage_mount_point}/${cfg.storage_name}"; # /mnt/storage/virgilio
+  dataPath    = "${cfg.data_mount_point}/${cfg.db_name}";          # /mnt/data/quipu
+  storagePath = "${cfg.storage_mount_point}/${cfg.storage_name}";  # /mnt/storage/virgilio
 in {
 
   imports = [ ./hardware-configuration.nix ];
@@ -110,18 +113,14 @@ in {
   boot.kernelParams = [ "ip=dhcp" ];
 
   # Remote SSH in initrd for unlocking nvme0 (LUKS OS disk).
-  # See PRE-INSTALLATION CHECKLIST step 3 for host key generation.
-  # Authorized keys come from the admin_ssh_key secret (via sops), but
-  # the initrd runs before sops — so we point to a pre-placed file instead.
-  # Place the public key in /etc/secrets/initrd/authorized_keys manually
-  # before the first build.
+  # See PRE-INSTALLATION CHECKLIST step 3 for key generation.
   boot.initrd.network = {
     enable = true;
     ssh = {
-      enable    = true;
-      port      = cfg.initrd_ssh_port;
+      enable             = true;
+      port               = cfg.initrd_ssh_port;
       authorizedKeyFiles = [ "/etc/secrets/initrd/authorized_keys" ];
-      hostKeys  = [ "/etc/secrets/initrd/ssh_host_ed25519_key" ];
+      hostKeys           = [ "/etc/secrets/initrd/ssh_host_ed25519_key" ];
     };
   };
 
@@ -164,8 +163,7 @@ in {
     LC_IDENTIFICATION = cfg.locale_identification;
   };
 
-  console.keyMap = cfg.keyboard_console;
-
+  console.keyMap               = cfg.keyboard_console;
   services.xserver.xkb.layout = cfg.keyboard_x11;
 
   ###############################################################
@@ -175,22 +173,19 @@ in {
   sops = {
     defaultSopsFile = ./secrets/secrets.yaml;
     age.keyFile     = "/root/.config/sops/age/keys.txt";
-
     secrets = {
       root_password.neededForUsers  = true;
       admin_password.neededForUsers = true;
-
       db_password = {
         owner = "postgres";
         mode  = "0600";
       };
-
       cloudflare_token = {};
-
       luks_data_key = {
         mode = "0400";
       };
     };
+  };
 
   ###############################################################
   # Users & groups
@@ -205,11 +200,10 @@ in {
     root.hashedPasswordFile = config.sops.secrets.root_password.path;
 
     ${cfg.admin_username} = {
-      isNormalUser    = true;
-      home            = "/home/${cfg.admin_username}";
-      extraGroups     = [ "wheel" "docker" "storage" ];
+      isNormalUser       = true;
+      home               = "/home/${cfg.admin_username}";
+      extraGroups        = [ "wheel" "docker" "storage" ];
       hashedPasswordFile = config.sops.secrets.admin_password.path;
-      # Public key is written by sops at runtime and read by openssh.
       openssh.authorizedKeys.keys = [ cfg.admin_ssh_key ];
     };
 
@@ -275,20 +269,14 @@ in {
     options = [ "x-systemd.requires=unlock-data-disk.service" ];
   };
 
-  # Directory structure.
-  # The 'd' directive is idempotent: creates only if absent.
+  # Directory structure — 'd' directive is idempotent: creates only if absent.
   systemd.tmpfiles.rules = [
-    # External storage
-    "d ${storagePath}                        0750 ${cfg.admin_username}     storage  - -"
-    "d ${storagePath}/helios                 0755 ${cfg.syncthing_username} storage  - -"
-    # Web root
-    "d /var/www/${cfg.domain}               0755 nginx                     nginx    - -"
-    # ACME HTTP challenge — group nginx so nginx can read certificates.
-    # These three lines replace the manual intervention that was previously
-    # needed: they are idempotent and run from the very first boot.
-    "d /var/lib/acme/acme-challenge                            0755 acme nginx - -"
-    "d /var/lib/acme/acme-challenge/.well-known                0755 acme nginx - -"
-    "d /var/lib/acme/acme-challenge/.well-known/acme-challenge 0755 acme nginx - -"
+    "d ${storagePath}                                           0750 ${cfg.admin_username}     storage - -"
+    "d ${storagePath}/helios                                    0755 ${cfg.syncthing_username} storage - -"
+    "d /var/www/${cfg.domain}                                  0755 nginx                     nginx   - -"
+    "d /var/lib/acme/acme-challenge                            0755 acme                      nginx   - -"
+    "d /var/lib/acme/acme-challenge/.well-known                0755 acme                      nginx   - -"
+    "d /var/lib/acme/acme-challenge/.well-known/acme-challenge 0755 acme                      nginx   - -"
   ];
 
   ###############################################################
@@ -296,21 +284,19 @@ in {
   ###############################################################
 
   services.postgresql = {
-    enable   = true;
-    dataDir  = "${dataPath}/postgresql";
+    enable          = true;
+    dataDir         = "${dataPath}/postgresql";
     ensureDatabases = [ cfg.db_name ];
-    ensureUsers = [{
-      name = cfg.db_username;
-    }];
-    authentication = lib.mkForce ''
+    ensureUsers     = [{ name = cfg.db_username; }];
+    authentication  = lib.mkForce ''
       local all postgres peer
       local all all    md5
       host  all all    127.0.0.1/32 md5
     '';
   };
 
-  # Sets the DB user password from the sops secret.
-  # Runs after every boot; ALTER USER is idempotent.
+  # Sets DB user password and grants from sops secret.
+  # Runs after every boot — both statements are idempotent.
   systemd.services.postgresql-set-password = {
     description = "Set PostgreSQL user password from sops secret";
     wantedBy    = [ "multi-user.target" ];
@@ -323,8 +309,10 @@ in {
     };
     script = ''
       DB_PASSWORD=$(cat ${config.sops.secrets.db_password.path})
-      ${config.services.postgresql.package}/bin/psql -c         "ALTER USER \"${cfg.db_username}\" WITH PASSWORD '$DB_PASSWORD';"
-      ${config.services.postgresql.package}/bin/psql -c         "GRANT ALL PRIVILEGES ON DATABASE \"${cfg.db_name}\" TO \"${cfg.db_username}\";"
+      ${config.services.postgresql.package}/bin/psql -c \
+        "ALTER USER \"${cfg.db_username}\" WITH PASSWORD '$DB_PASSWORD';"
+      ${config.services.postgresql.package}/bin/psql -c \
+        "GRANT ALL PRIVILEGES ON DATABASE \"${cfg.db_name}\" TO \"${cfg.db_username}\";"
     '';
   };
 
@@ -335,7 +323,7 @@ in {
   virtualisation.docker.enable = true;
 
   # Creates /run/cloudflare.env from the sops secret at boot.
-  # The file is written to /run (tmpfs) so it never touches disk unencrypted.
+  # Written to /run (tmpfs) so it never touches disk unencrypted.
   systemd.services.cloudflare-env = {
     description = "Write Cloudflare tunnel env file from sops secret";
     wantedBy    = [ "docker-cloudflare.service" ];
@@ -399,15 +387,13 @@ in {
   #   localRoot   = storagePath;
   #   userlist    = [ cfg.admin_username ];
   # };
-  #
   # users.users.${cfg.ftp_username} = {
   #   isSystemUser = true;
   #   group        = "ftp";
   #   extraGroups  = [ "storage" ];
   # };
   # users.groups.ftp = {};
-  #
-  # Uncomment cfg.ftp_port in networking.firewall.allowedTCPPorts too.
+  # Also uncomment cfg.ftp_port in networking.firewall.allowedTCPPorts.
 
   ###############################################################
   # Nginx & ACME
@@ -416,38 +402,30 @@ in {
   services.nginx = {
     enable  = true;
     package = pkgs.nginxStable.override { openssl = pkgs.libressl; };
-
     virtualHosts = {
       "${cfg.domain}" = {
         forceSSL   = true;
         enableACME = true;
-        locations."/.well-known/acme-challenge".root =
-          "/var/lib/acme/acme-challenge";
+        locations."/.well-known/acme-challenge".root = "/var/lib/acme/acme-challenge";
         root = "/var/www/${cfg.domain}";
       };
-
       "warden.${cfg.domain}" = {
         forceSSL   = true;
         enableACME = true;
-        locations."/.well-known/acme-challenge".root =
-          "/var/lib/acme/acme-challenge";
-        locations."/".proxyPass =
-          "https://0.0.0.0:${toString cfg.vaultwarden_port}";
+        locations."/.well-known/acme-challenge".root = "/var/lib/acme/acme-challenge";
+        locations."/".proxyPass = "https://0.0.0.0:${toString cfg.vaultwarden_port}";
       };
-
       "sync.${cfg.domain}" = {
         forceSSL   = true;
         enableACME = true;
-        locations."/.well-known/acme-challenge".root =
-          "/var/lib/acme/acme-challenge";
-        locations."/".proxyPass =
-          "http://0.0.0.0:${toString cfg.syncthing_port}";
+        locations."/.well-known/acme-challenge".root = "/var/lib/acme/acme-challenge";
+        locations."/".proxyPass = "http://0.0.0.0:${toString cfg.syncthing_port}";
       };
     };
   };
 
-  # defaults.group = "nginx" is the clean fix for the nginx/acme
-  # permissions issue — replaces the manual workaround from V1.
+  # defaults.group = "nginx" grants nginx read access to certificates —
+  # the clean fix for the manual nginx/acme workaround from V1.
   security.acme = {
     acceptTerms = true;
     defaults = {
