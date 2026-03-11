@@ -249,8 +249,6 @@ in {
     description = "Unlock LUKS data disk (nvme1)";
     wantedBy    = [ "multi-user.target" ];
     before      = [ "postgresql.service" ];
-    after       = [ "sops-install-secrets.service" ];
-    requires    = [ "sops-install-secrets.service" ];
     unitConfig.ConditionPathExists = "!/dev/mapper/data-disk";
     serviceConfig = {
       Type            = "oneshot";
@@ -302,7 +300,7 @@ in {
   systemd.services.postgresql-set-password = {
     description = "Set PostgreSQL user password from sops secret";
     wantedBy    = [ "multi-user.target" ];
-    after       = [ "postgresql.service" "sops-install-secrets.service" ];
+    after       = [ "postgresql.service" ];
     requires    = [ "postgresql.service" ];
     serviceConfig = {
       Type            = "oneshot";
@@ -330,8 +328,6 @@ in {
     description     = "Write Cloudflare tunnel env file from sops secret";
     wantedBy        = [ "multi-user.target" ];
     before          = [ "docker-cloudflare.service" ];
-    after           = [ "sops-install-secrets.service" ];
-    requires        = [ "sops-install-secrets.service" ];
     unitConfig.ConditionPathExists = "!/run/cloudflare.env";
     serviceConfig = {
       Type            = "oneshot";
