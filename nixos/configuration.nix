@@ -276,10 +276,10 @@ in {
   systemd.tmpfiles.rules = [
     "d ${storagePath}                                           0750 ${cfg.admin_username}     storage - -"
     "d ${storagePath}/helios                                    0755 ${cfg.syncthing_username} storage - -"
-    "d /var/www/${cfg.domain}                                   0755 nginx                     nginx   - -"
-    "d /var/lib/acme/acme-challenge                             0755 acme                      nginx   - -"
-    "d /var/lib/acme/acme-challenge/.well-known                 0755 acme                      nginx   - -"
-    "d /var/lib/acme/acme-challenge/.well-known/acme-challenge  0755 acme                      nginx   - -"
+    "d /var/www/${cfg.domain}                                  0755 nginx                     nginx   - -"
+    "d /var/lib/acme/acme-challenge                            0755 acme                      nginx   - -"
+    "d /var/lib/acme/acme-challenge/.well-known                0755 acme                      nginx   - -"
+    "d /var/lib/acme/acme-challenge/.well-known/acme-challenge 0755 acme                      nginx   - -"
     # PostgreSQL data directory on nvme1 — created after the disk is mounted
     "d ${dataPath}            0750 postgres postgres - -"
     "d ${dataPath}/postgresql 0750 postgres postgres - -"
@@ -322,10 +322,15 @@ in {
     };
     script = ''
       DB_PASSWORD=$(cat ${config.sops.secrets.db_password.path})
-      ${config.services.postgresql.package}/bin/psql -c \
-        "ALTER USER \"${cfg.db_username}\" WITH PASSWORD '$DB_PASSWORD';"
-      ${config.services.postgresql.package}/bin/psql -c \
-        "GRANT ALL PRIVILEGES ON DATABASE \"${cfg.db_name}\" TO \"${cfg.db_username}\";"
+      # Wait for ensureUsers to create the role (runs in postgresql ExecStartPost)
+      for i in $(seq 1 30); do
+        ROLE=$(${config.services.postgresql.package}/bin/psql -tAc           "SELECT 1 FROM pg_roles WHERE rolname='${cfg.db_username}'")
+        if [ "$ROLE" = "1" ]; then break; fi
+        echo "Waiting for role ${cfg.db_username} to be created... ($i/30)"
+        sleep 2
+      done
+      ${config.services.postgresql.package}/bin/psql -c         "ALTER USER \"${cfg.db_username}\" WITH PASSWORD '$DB_PASSWORD';"
+      ${config.services.postgresql.package}/bin/psql -c         "GRANT ALL PRIVILEGES ON DATABASE \"${cfg.db_name}\" TO \"${cfg.db_username}\";"
     '';
   };
 
