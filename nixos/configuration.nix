@@ -192,15 +192,6 @@ in {
       };
     };
 
-    # Env file consumed by the Cloudflare Docker container at runtime.
-    templates."cloudflare.env" = {
-      content = ''
-        TUNNEL_TOKEN=${config.sops.secrets.cloudflare_token.placeholder}
-      '';
-      mode = "0400";
-    };
-  };
-
   ###############################################################
   # Users & groups
   ###############################################################
@@ -343,12 +334,31 @@ in {
 
   virtualisation.docker.enable = true;
 
+  # Creates /run/cloudflare.env from the sops secret at boot.
+  # The file is written to /run (tmpfs) so it never touches disk unencrypted.
+  systemd.services.cloudflare-env = {
+    description = "Write Cloudflare tunnel env file from sops secret";
+    wantedBy    = [ "docker-cloudflare.service" ];
+    before      = [ "docker-cloudflare.service" ];
+    after       = [ "sops-install-secrets.service" ];
+    requires    = [ "sops-install-secrets.service" ];
+    serviceConfig = {
+      Type            = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      TOKEN=$(cat ${config.sops.secrets.cloudflare_token.path})
+      echo "TUNNEL_TOKEN=$TOKEN" > /run/cloudflare.env
+      chmod 400 /run/cloudflare.env
+    '';
+  };
+
   virtualisation.oci-containers = {
     backend = "docker";
     containers.cloudflare = {
       image            = "cloudflare/cloudflared:latest";
       cmd              = [ "tunnel" "--no-autoupdate" "run" ];
-      environmentFiles = [ config.sops.templates."cloudflare.env".path ];
+      environmentFiles = [ "/run/cloudflare.env" ];
     };
   };
 
