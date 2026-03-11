@@ -257,7 +257,7 @@ in {
       RemainAfterExit = true;
     };
     script = ''
-      ${pkgs.udev}/bin/udevadm settle
+      ${pkgs.systemd}/bin/udevadm settle
       ${pkgs.cryptsetup}/bin/cryptsetup open \
         /dev/disk/by-uuid/${cfg.data_disk_uuid} \
         data-disk \
@@ -325,27 +325,35 @@ in {
 
   virtualisation.docker.enable = true;
 
-  # Write /run/cloudflare.env just before the container starts.
-  # ExecStartPre runs in the same service context as the container,
-  # so the file is guaranteed to exist when docker reads it.
-  systemd.services.docker-cloudflare = {
-    serviceConfig.ExecStartPre = [
-      ""   # clear NixOS default pre-start (keep docker pull behavior)
-      (pkgs.writeShellScript "cloudflare-env-write" ''
-        printf 'TUNNEL_TOKEN=%s' "$(cat ${config.sops.secrets.cloudflare_token.path})"           > /run/cloudflare.env
-        chmod 400 /run/cloudflare.env
-      '')
-    ];
-  };
-
-  virtualisation.oci-containers = {
-    backend = "docker";
-    containers.cloudflare = {
-      image            = "cloudflare/cloudflared:latest";
-      cmd              = [ "tunnel" "--no-autoupdate" "run" ];
-      environmentFiles = [ "/run/cloudflare.env" ];
+  # Run the Cloudflare Zero Trust tunnel as a plain systemd service.
+  # oci-containers is avoided because NixOS does not support runtime
+  # secret injection into generated docker units cleanly.
+  systemd.services.cloudflare-tunnel = {
+    description = "Cloudflare Zero Trust tunnel";
+    wantedBy    = [ "multi-user.target" ];
+    after       = [ "docker.service" "network-online.target" ];
+    requires    = [ "docker.service" ];
+    wants       = [ "network-online.target" ];
+    serviceConfig = {
+      Restart    = "always";
+      RestartSec = "5s";
+      ExecStartPre = pkgs.writeShellScript "cloudflare-pull" ''
+        ${pkgs.docker}/bin/docker pull cloudflare/cloudflared:latest
+      '';
+      ExecStart = pkgs.writeShellScript "cloudflare-start" ''
+        TOKEN=$(cat ${config.sops.secrets.cloudflare_token.path})
+        exec ${pkgs.docker}/bin/docker run --rm --name cloudflare \
+          -e TUNNEL_TOKEN="$TOKEN" \
+          cloudflare/cloudflared:latest \
+          tunnel --no-autoupdate run
+      '';
+      ExecStop = pkgs.writeShellScript "cloudflare-stop" ''
+        ${pkgs.docker}/bin/docker stop cloudflare || true
+        ${pkgs.docker}/bin/docker rm   cloudflare || true
+      '';
     };
   };
+
 
 
   ###############################################################
