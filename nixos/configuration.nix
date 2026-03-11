@@ -327,20 +327,27 @@ in {
   # Creates /run/cloudflare.env from the sops secret at boot.
   # Written to /run (tmpfs) so it never touches disk unencrypted.
   systemd.services.cloudflare-env = {
-    description = "Write Cloudflare tunnel env file from sops secret";
-    wantedBy    = [ "docker-cloudflare.service" ];
-    before      = [ "docker-cloudflare.service" ];
-    after       = [ "sops-install-secrets.service" ];
-    requires    = [ "sops-install-secrets.service" ];
+    description     = "Write Cloudflare tunnel env file from sops secret";
+    wantedBy        = [ "multi-user.target" ];
+    before          = [ "docker-cloudflare.service" ];
+    after           = [ "sops-install-secrets.service" ];
+    requires        = [ "sops-install-secrets.service" ];
+    unitConfig.ConditionPathExists = "!/run/cloudflare.env";
     serviceConfig = {
       Type            = "oneshot";
       RemainAfterExit = true;
     };
     script = ''
       TOKEN=$(cat ${config.sops.secrets.cloudflare_token.path})
-      echo "TUNNEL_TOKEN=$TOKEN" > /run/cloudflare.env
+      printf 'TUNNEL_TOKEN=%s' "$TOKEN" > /run/cloudflare.env
       chmod 400 /run/cloudflare.env
     '';
+  };
+
+  # Ensure docker-cloudflare waits for the env file to exist.
+  systemd.services.docker-cloudflare = {
+    after    = [ "cloudflare-env.service" ];
+    requires = [ "cloudflare-env.service" ];
   };
 
   virtualisation.oci-containers = {
@@ -351,6 +358,7 @@ in {
       environmentFiles = [ "/run/cloudflare.env" ];
     };
   };
+
 
   ###############################################################
   # Vaultwarden
