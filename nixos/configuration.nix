@@ -276,15 +276,25 @@ in {
   systemd.tmpfiles.rules = [
     "d ${storagePath}                                           0750 ${cfg.admin_username}     storage - -"
     "d ${storagePath}/helios                                    0755 ${cfg.syncthing_username} storage - -"
-    "d /var/www/${cfg.domain}                                  0755 nginx                     nginx   - -"
-    "d /var/lib/acme/acme-challenge                            0755 acme                      nginx   - -"
-    "d /var/lib/acme/acme-challenge/.well-known                0755 acme                      nginx   - -"
-    "d /var/lib/acme/acme-challenge/.well-known/acme-challenge 0755 acme                      nginx   - -"
+    "d /var/www/${cfg.domain}                                   0755 nginx                     nginx   - -"
+    "d /var/lib/acme/acme-challenge                             0755 acme                      nginx   - -"
+    "d /var/lib/acme/acme-challenge/.well-known                 0755 acme                      nginx   - -"
+    "d /var/lib/acme/acme-challenge/.well-known/acme-challenge  0755 acme                      nginx   - -"
+    # PostgreSQL data directory on nvme1 — created after the disk is mounted
+    "d ${dataPath}            0750 postgres postgres - -"
+    "d ${dataPath}/postgresql 0750 postgres postgres - -"
   ];
 
   ###############################################################
   # PostgreSQL
   ###############################################################
+
+  # postgresql must wait for the nvme1 data disk to be mounted.
+  # The unit name is the mount path with / replaced by - and leading - dropped.
+  systemd.services.postgresql = {
+    after    = [ "mnt-data-quipu.mount" ];
+    requires = [ "mnt-data-quipu.mount" ];
+  };
 
   services.postgresql = {
     enable          = true;
