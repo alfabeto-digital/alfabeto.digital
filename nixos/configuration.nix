@@ -180,10 +180,6 @@ in {
       root_password.neededForUsers  = true;
       admin_password.neededForUsers = true;
 
-      # Public SSH key for the admin user — not sensitive but managed
-      # centrally through sops for a single source of truth.
-      admin_ssh_key = {};
-
       db_password = {
         owner = "postgres";
         mode  = "0600";
@@ -223,9 +219,7 @@ in {
       extraGroups     = [ "wheel" "docker" "storage" ];
       hashedPasswordFile = config.sops.secrets.admin_password.path;
       # Public key is written by sops at runtime and read by openssh.
-      openssh.authorizedKeys.keyFiles = [
-        config.sops.secrets.admin_ssh_key.path
-      ];
+      openssh.authorizedKeys.keys = [ cfg.admin_ssh_key ];
     };
 
     ${cfg.syncthing_username} = {
