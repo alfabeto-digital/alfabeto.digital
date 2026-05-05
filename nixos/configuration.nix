@@ -388,6 +388,7 @@ in {
   systemd.services.vaultwarden = {
     after    = [ "mnt-storage-virgilio.mount" ];
     requires = [ "mnt-storage-virgilio.mount" ];
+    serviceConfig.ReadWritePaths = [ "${storagePath}/exchange/vaultwarden" ];
   };
 
   services.vaultwarden = {
