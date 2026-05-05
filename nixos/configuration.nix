@@ -281,12 +281,15 @@ in {
 
   # Directory structure — 'd' directive is idempotent: creates only if absent.
   systemd.tmpfiles.rules = [
-    "d ${storagePath}                                           0750 ${cfg.admin_username}     storage - -"
-    "d ${storagePath}/helios                                    0755 ${cfg.syncthing_username} storage - -"
-    "d /var/www/${cfg.domain}                                  0755 nginx                     nginx   - -"
-    "d /var/lib/acme/acme-challenge                            0755 acme                      nginx   - -"
-    "d /var/lib/acme/acme-challenge/.well-known                0755 acme                      nginx   - -"
-    "d /var/lib/acme/acme-challenge/.well-known/acme-challenge 0755 acme                      nginx   - -"
+    "d ${storagePath}                                           0750 ${cfg.admin_username}       storage                    - -"
+    "d ${storagePath}/exchange                                  0750 ${cfg.admin_username}       storage                    - -"
+    "d ${storagePath}/exchange/vaultwarden                      0750 ${cfg.vaultwarden_username} ${cfg.vaultwarden_username} - -"
+    "d ${storagePath}/exchange/syncthing                        0750 ${cfg.syncthing_username}   storage                    - -"
+    "d ${storagePath}/helios                                    0755 ${cfg.syncthing_username}   storage                    - -"
+    "d /var/www/${cfg.domain}                                  0755 nginx                        nginx                      - -"
+    "d /var/lib/acme/acme-challenge                            0755 acme                         nginx                      - -"
+    "d /var/lib/acme/acme-challenge/.well-known                0755 acme                         nginx                      - -"
+    "d /var/lib/acme/acme-challenge/.well-known/acme-challenge 0755 acme                         nginx                      - -"
     # PostgreSQL data directory on nvme1 — created after the disk is mounted
     "d ${dataPath}            0750 postgres postgres - -"
     "d ${dataPath}/postgresql 0750 postgres postgres - -"
@@ -382,6 +385,11 @@ in {
   # Vaultwarden
   ###############################################################
 
+  systemd.services.vaultwarden = {
+    after    = [ "mnt-storage-virgilio.mount" ];
+    requires = [ "mnt-storage-virgilio.mount" ];
+  };
+
   services.vaultwarden = {
     enable = true;
     config = {
@@ -442,7 +450,7 @@ in {
         forceSSL   = true;
         enableACME = true;
         locations."/.well-known/acme-challenge".root = "/var/lib/acme/acme-challenge";
-        locations."/".proxyPass = "https://0.0.0.0:${toString cfg.vaultwarden_port}";
+        locations."/".proxyPass = "http://127.0.0.1:${toString cfg.vaultwarden_port}";
       };
       "sync.${cfg.domain}" = {
         forceSSL   = true;
