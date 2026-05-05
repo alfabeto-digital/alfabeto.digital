@@ -44,6 +44,7 @@
   # Not a secret — paste the full contents of ~/.ssh/id_ed25519.pub here.
   admin_ssh_key      = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFDzt0xpIooI9TG2oITP+p23Ju8IBbn5YPnsiaw2YnnV services@alfabeto.digital"; # <-- REPLACE
   syncthing_username = "syncthing";
+  vaultwarden_username = "vaultwarden";
   ftp_username       = "ftp";
 
   ###############################################################

@@ -196,6 +196,7 @@ in {
   users.groups = {
     storage   = {};
     syncthing = {};
+    vaultwarden = {};
   };
 
   users.users = {
@@ -212,6 +213,12 @@ in {
     ${cfg.syncthing_username} = {
       isSystemUser = true;
       group        = lib.mkForce cfg.syncthing_username;
+      extraGroups  = [ "storage" ];
+    };
+
+    ${cfg.vaultwarden_username} = {
+      isSystemUser = true;
+      group        = lib.mkForce cfg.vaultwarden_username;
       extraGroups  = [ "storage" ];
     };
   };
@@ -381,6 +388,7 @@ in {
       DOMAIN         = "https://warden.${cfg.domain}";
       ROCKET_ADDRESS = "0.0.0.0";
       ROCKET_PORT    = cfg.vaultwarden_port;
+      DATA_FOLDER    = "${storagePath}/exchange/vaultwarden";
     };
   };
 
@@ -393,7 +401,7 @@ in {
     user       = cfg.syncthing_username;
     group      = "storage";
     dataDir    = "${storagePath}/helios";
-    configDir  = "${storagePath}/helios/syncthing";
+    configDir  = "${storagePath}/exchange/syncthing";
     guiAddress = "0.0.0.0:${toString cfg.syncthing_port}";
   };
 
