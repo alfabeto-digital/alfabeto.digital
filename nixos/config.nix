@@ -85,8 +85,9 @@
   # Service ports
   ###############################################################
 
-  vaultwarden_port = 8222;
-  syncthing_port   = 8384;
-  ftp_port         = 21;
-  initrd_ssh_port  = 2222;
+  vaultwarden_port  = 8222;
+  syncthing_port    = 8384;
+  domain_tunnel_port = 8081;  # localhost-only HTTP for Cloudflare tunnel
+  ftp_port          = 21;
+  initrd_ssh_port   = 2222;
 }

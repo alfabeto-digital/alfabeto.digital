@@ -447,6 +447,16 @@ in {
         locations."/.well-known/acme-challenge".root = "/var/lib/acme/acme-challenge";
         root = "/var/www/${cfg.domain}";
       };
+      # Localhost-only HTTP endpoint for the Cloudflare tunnel.
+      # forceSSL on the public vhost redirects port 80 → HTTPS, which
+      # causes an IP-SAN TLS error inside cloudflared.  This vhost sits
+      # on 127.0.0.1:domain_tunnel_port and serves the same content over
+      # plain HTTP so the tunnel never touches TLS internally.
+      "${cfg.domain}-tunnel" = {
+        serverName = cfg.domain;
+        listen     = [{ addr = "127.0.0.1"; port = cfg.domain_tunnel_port; ssl = false; }];
+        root       = "/var/www/${cfg.domain}";
+      };
       "warden.${cfg.domain}" = {
         forceSSL   = true;
         enableACME = true;
