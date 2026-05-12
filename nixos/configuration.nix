@@ -368,6 +368,7 @@ in {
       ExecStart = pkgs.writeShellScript "cloudflare-start" ''
         TOKEN=$(cat ${config.sops.secrets.cloudflare_token.path})
         exec ${pkgs.docker}/bin/docker run --rm --name cloudflare \
+          --network host \
           -e TUNNEL_TOKEN="$TOKEN" \
           cloudflare/cloudflared:latest \
           tunnel --no-autoupdate run
