@@ -18,7 +18,7 @@
           ${pkgs.podman}/bin/podman pull cloudflare/cloudflared:latest
         '';
         ExecStart = pkgs.writeShellScript "cloudflare-start" ''
-          TOKEN=$(cat ${config.sops.secrets.cloudflare_token.path})
+          TOKEN=$(tr -d '[:space:]' < ${config.sops.secrets.cloudflare_token.path})
           exec ${pkgs.podman}/bin/podman run --rm --name cloudflare \
             --network host \
             -e TUNNEL_TOKEN="$TOKEN" \
