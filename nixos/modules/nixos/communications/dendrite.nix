@@ -7,7 +7,7 @@
     ];
 
     # dendrite_private_key must be added to secrets.yaml before deploying.
-    # Generate: nix run nixpkgs#dendrite -- generate-keys --private-key /tmp/matrix_key.pem
+    # Generate: nix shell nixpkgs#dendrite -c generate-keys --private-key /tmp/matrix_key.pem
     sops.secrets.dendrite_private_key = {
       owner = "dendrite";
       mode  = "0400";
