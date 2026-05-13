@@ -8,9 +8,9 @@
     services.adguardhome = {
       enable          = true;
       mutableSettings = true;
+      host            = "127.0.0.1";
+      port            = cfg.adguard_port;
       settings = {
-        bind_host = "127.0.0.1";
-        bind_port = cfg.adguard_port;
         dns = {
           bind_hosts      = [ "0.0.0.0" ];
           port            = 53;
