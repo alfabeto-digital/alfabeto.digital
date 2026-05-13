@@ -15,7 +15,7 @@
   # System
   ###############################################################
 
-  hostname = "alfabetodigital";
+  hostname = "alfabeto-digital";
   timezone = "America/Bogota";
 
   # Locale — each LC category is configurable independently.
@@ -85,9 +85,16 @@
   # Service ports
   ###############################################################
 
-  vaultwarden_port  = 8222;
-  syncthing_port    = 8384;
+  vaultwarden_port   = 8222;
+  syncthing_port     = 8384;
   domain_tunnel_port = 8081;  # localhost-only HTTP for Cloudflare tunnel
-  ftp_port          = 21;
-  initrd_ssh_port   = 2222;
+  ftp_port           = 21;
+  initrd_ssh_port    = 2222;
+
+  # Paso 3 — communications & security services (all internal; exposed via Caddy in Paso 4)
+  adguard_port  = 3000;    # AdGuard Home admin UI
+  authelia_port = 9091;    # Authelia SSO / 2FA
+  dendrite_port = 8008;    # Dendrite Matrix homeserver HTTP
+  stalwart_port = 8080;    # Stalwart Mail management
+  ntfy_port     = 2586;    # ntfy push notifications
 }
