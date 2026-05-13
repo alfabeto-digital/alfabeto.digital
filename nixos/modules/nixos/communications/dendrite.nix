@@ -6,6 +6,15 @@
       "d ${storagePath}/exchange/dendrite/media  0750 dendrite dendrite - -"
     ];
 
+    # services.dendrite uses DynamicUser in systemd and does not populate
+    # users.users, so sops-nix cannot resolve the group automatically.
+    # Declare both explicitly so the secret owner/group resolves at eval time.
+    users.users.dendrite = {
+      isSystemUser = true;
+      group        = "dendrite";
+    };
+    users.groups.dendrite = {};
+
     # dendrite_private_key must be added to secrets.yaml before deploying.
     # Generate: nix shell nixpkgs#dendrite -c generate-keys --private-key /tmp/matrix_key.pem
     sops.secrets.dendrite_private_key = {
