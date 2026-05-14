@@ -6,7 +6,10 @@
     ];
 
     systemd.services.vaultwarden = {
-      serviceConfig.ReadWritePaths = [ "${exchangePath}/vaultwarden" ];
+      serviceConfig = {
+        ReadWritePaths = [ "${exchangePath}/vaultwarden" ];
+        ProtectHome    = "no";
+      };
     };
 
     services.vaultwarden = {
