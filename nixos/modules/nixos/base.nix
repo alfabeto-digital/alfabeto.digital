@@ -140,6 +140,7 @@
 
     environment.systemPackages = with pkgs; [
       vim wget fzf kitty sops hostname bashtop gtop postgresql cryptsetup
+      pciutils ethtool iproute2 net-tools
     ];
 
     systemd.tmpfiles.rules = [
