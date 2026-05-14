@@ -32,7 +32,6 @@
       after    = [ "postgresql-stalwart-setup.service" ];
       requires = [ "postgresql-stalwart-setup.service" ];
       serviceConfig = {
-        BindPaths      = [ "/run/postgresql" ];
         ProtectHome    = lib.mkForce "no";
         ReadWritePaths = [ "${exchangePath}/stalwart" ];
       };
@@ -77,7 +76,8 @@
         };
         store.db = {
           type     = "postgresql";
-          host     = "/run/postgresql";
+          host     = "127.0.0.1";
+          port     = 5432;
           database = "stalwart";
           user     = "stalwart-mail";
         };
