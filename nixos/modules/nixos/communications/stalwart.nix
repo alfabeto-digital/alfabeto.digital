@@ -42,7 +42,7 @@
       settings = {
         server = {
           hostname = "mail.${cfg.domain}";
-          listeners = {
+          listener = {
             smtp = {
               bind    = [ "0.0.0.0:25" ];
               protocol = "smtp";
