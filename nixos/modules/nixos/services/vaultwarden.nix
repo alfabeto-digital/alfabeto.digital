@@ -8,7 +8,7 @@
     systemd.services.vaultwarden = {
       serviceConfig = {
         ReadWritePaths = [ "${exchangePath}/vaultwarden" ];
-        ProtectHome    = "no";
+        ProtectHome    = lib.mkForce "no";
       };
     };
 
