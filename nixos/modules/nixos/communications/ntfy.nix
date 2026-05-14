@@ -1,10 +1,23 @@
 { inputs, ... }: {
   flake.nixosModules.ntfy = { config, lib, pkgs, cfg, exchangePath, ... }: {
 
+    users.users.ntfy-sh = { isSystemUser = true; group = "ntfy-sh"; };
+    users.groups.ntfy-sh = {};
+
     systemd.tmpfiles.rules = [
       "d ${exchangePath}/ntfy             0750 ntfy-sh ntfy-sh - -"
       "d ${exchangePath}/ntfy/attachments 0750 ntfy-sh ntfy-sh - -"
     ];
+
+    systemd.services.ntfy-sh = {
+      serviceConfig = {
+        DynamicUser    = lib.mkForce false;
+        User           = lib.mkForce "ntfy-sh";
+        Group          = lib.mkForce "ntfy-sh";
+        ProtectHome    = lib.mkForce "no";
+        ReadWritePaths = [ "${exchangePath}/ntfy" ];
+      };
+    };
 
     services.ntfy-sh = {
       enable = true;
