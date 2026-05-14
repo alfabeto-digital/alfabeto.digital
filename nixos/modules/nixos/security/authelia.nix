@@ -43,6 +43,10 @@
     systemd.services.authelia-main = {
       after    = [ "postgresql-authelia-setup.service" ];
       requires = [ "postgresql-authelia-setup.service" ];
+      serviceConfig = {
+        ProtectHome    = lib.mkForce "no";
+        ReadWritePaths = [ "${exchangePath}/authelia" ];
+      };
     };
 
     services.authelia.instances.main = {
