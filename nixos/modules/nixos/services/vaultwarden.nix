@@ -1,5 +1,5 @@
 { inputs, ... }: {
-  flake.nixosModules.vaultwarden = { config, lib, pkgs, cfg, exchangePath, ... }: {
+  flake.nixosModules.vaultwarden = { config, lib, pkgs, cfg, exchangePath, pkgsUnstable, ... }: {
 
     systemd.tmpfiles.rules = [
       "d ${exchangePath}/vaultwarden 0750 vaultwarden vaultwarden - -"
@@ -13,7 +13,8 @@
     };
 
     services.vaultwarden = {
-      enable = true;
+      enable  = true;
+      package = pkgsUnstable.vaultwarden;
       config = {
         DOMAIN         = "https://warden.${cfg.domain}";
         ROCKET_ADDRESS = "0.0.0.0";

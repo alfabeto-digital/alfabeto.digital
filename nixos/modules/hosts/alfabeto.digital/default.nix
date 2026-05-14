@@ -3,11 +3,12 @@ let
   cfg         = import ../../../config.nix;
   storagePath = "${cfg.storage_mount_point}/${cfg.storage_name}";
   dataPath    = "${cfg.data_mount_point}/${cfg.db_name}";
+  pkgsUnstable = import inputs.nixpkgs-unstable { system = "x86_64-linux"; config.allowUnfree = true; };
 in {
   flake.nixosConfigurations.${cfg.hostname} = inputs.nixpkgs.lib.nixosSystem {
     system = "x86_64-linux";
     specialArgs = {
-      inherit cfg storagePath dataPath;
+      inherit cfg storagePath dataPath pkgsUnstable;
       flakeDir     = self.outPath;
       exchangePath = "/home/${cfg.admin_username}/exchange";
     };
