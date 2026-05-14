@@ -8,7 +8,8 @@ in {
     system = "x86_64-linux";
     specialArgs = {
       inherit cfg storagePath dataPath;
-      flakeDir = self.outPath;
+      flakeDir     = self.outPath;
+      exchangePath = "/home/${cfg.admin_username}/exchange";
     };
     modules = [
       inputs.sops-nix.nixosModules.sops

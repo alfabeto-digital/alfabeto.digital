@@ -36,8 +36,6 @@
     systemd.tmpfiles.rules = [
       "d ${storagePath}                                           0750 ${cfg.admin_username}       storage                     - -"
       "d ${storagePath}/exchange                                  0750 ${cfg.admin_username}       storage                     - -"
-      "d ${storagePath}/exchange/vaultwarden                      0750 ${cfg.vaultwarden_username} ${cfg.vaultwarden_username}  - -"
-      "d ${storagePath}/exchange/syncthing                        0750 ${cfg.syncthing_username}   storage                     - -"
       "d ${storagePath}/helios         0755 ${cfg.syncthing_username} storage - -"
       "d /var/www/${cfg.domain}       0755 caddy                   caddy   - -"
       "d ${dataPath}            0750 postgres postgres - -"

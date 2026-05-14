@@ -1,8 +1,8 @@
 { inputs, ... }: {
-  flake.nixosModules.adguard = { config, lib, pkgs, cfg, storagePath, ... }: {
+  flake.nixosModules.adguard = { config, lib, pkgs, cfg, exchangePath, ... }: {
 
     systemd.tmpfiles.rules = [
-      "d ${storagePath}/exchange/adguard 0750 adguardhome adguardhome - -"
+      "d ${exchangePath}/adguard 0750 adguardhome adguardhome - -"
     ];
 
     services.adguardhome = {
@@ -23,6 +23,9 @@
         };
       };
     };
+
+    systemd.services.adguardhome.serviceConfig.ExecStart = lib.mkForce
+      "${pkgs.adguardhome}/bin/AdGuardHome --no-check-update -w ${exchangePath}/adguard";
 
     networking.firewall.allowedTCPPorts = [ 53 ];
     networking.firewall.allowedUDPPorts = [ 53 ];

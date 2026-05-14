@@ -12,10 +12,12 @@
       ensureDatabases = [ cfg.db_name ];
       ensureUsers     = [{ name = cfg.db_username; }];
       authentication  = lib.mkForce ''
-        local all      postgres  peer
-        local dendrite dendrite  peer
-        local all      all       md5
-        host  all      all       127.0.0.1/32 md5
+        local all      postgres       peer
+        local dendrite dendrite       peer
+        local authelia authelia-main  peer
+        local stalwart stalwart-mail  peer
+        local all      all            md5
+        host  all      all            127.0.0.1/32 md5
       '';
     };
 

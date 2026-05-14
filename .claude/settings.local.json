@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"unix:///\" /c/Users/coyote/helios/sarasvati/currently_working/alfabeto.digital/nixos --include=\"*.nix\")",
+      "Bash(grep -r \"postgresql:///\" /c/Users/coyote/helios/sarasvati/currently_working/alfabeto.digital/nixos --include=\"*.nix\")"
+    ]
+  }
+}

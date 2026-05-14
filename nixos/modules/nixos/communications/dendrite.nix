@@ -1,9 +1,10 @@
 { inputs, ... }: {
-  flake.nixosModules.dendrite = { config, lib, pkgs, cfg, storagePath, ... }: {
+  flake.nixosModules.dendrite = { config, lib, pkgs, cfg, exchangePath, ... }: {
 
     systemd.tmpfiles.rules = [
-      "d ${storagePath}/exchange/dendrite        0750 dendrite dendrite - -"
-      "d ${storagePath}/exchange/dendrite/media  0750 dendrite dendrite - -"
+      "d ${exchangePath}/dendrite        0750 dendrite dendrite - -"
+      "d ${exchangePath}/dendrite/media  0750 dendrite dendrite - -"
+      "d ${exchangePath}/dendrite/nats   0750 dendrite dendrite - -"
     ];
 
     # services.dendrite uses DynamicUser in systemd and does not populate
@@ -41,13 +42,13 @@
           guests_disabled       = true;
         };
         media_api = {
-          base_path           = "${storagePath}/exchange/dendrite/media";
+          base_path           = "${exchangePath}/dendrite/media";
           max_file_size_bytes = 104857600;
         };
         sync_api.search.enabled = true;
         # Uses peer auth over Unix socket — no password needed in Nix store.
         database.connection_string = "postgresql:///dendrite?host=/run/postgresql";
-        jetstream.storage_path     = "${storagePath}/exchange/dendrite/nats";
+        jetstream.storage_path     = "${exchangePath}/dendrite/nats";
         logging = [{ type = "std"; level = "warn"; }];
       };
     };

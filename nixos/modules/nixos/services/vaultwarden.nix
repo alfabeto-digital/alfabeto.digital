@@ -1,10 +1,12 @@
 { inputs, ... }: {
-  flake.nixosModules.vaultwarden = { config, lib, pkgs, cfg, storagePath, ... }: {
+  flake.nixosModules.vaultwarden = { config, lib, pkgs, cfg, exchangePath, ... }: {
+
+    systemd.tmpfiles.rules = [
+      "d ${exchangePath}/vaultwarden 0750 vaultwarden vaultwarden - -"
+    ];
 
     systemd.services.vaultwarden = {
-      after    = [ "mnt-storage-virgilio.mount" ];
-      requires = [ "mnt-storage-virgilio.mount" ];
-      serviceConfig.ReadWritePaths = [ "${storagePath}/exchange/vaultwarden" ];
+      serviceConfig.ReadWritePaths = [ "${exchangePath}/vaultwarden" ];
     };
 
     services.vaultwarden = {
@@ -13,7 +15,7 @@
         DOMAIN         = "https://warden.${cfg.domain}";
         ROCKET_ADDRESS = "0.0.0.0";
         ROCKET_PORT    = cfg.vaultwarden_port;
-        DATA_FOLDER    = "${storagePath}/exchange/vaultwarden";
+        DATA_FOLDER    = "${exchangePath}/vaultwarden";
       };
     };
   };

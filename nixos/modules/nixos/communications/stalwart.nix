@@ -1,9 +1,37 @@
 { inputs, ... }: {
-  flake.nixosModules.stalwart = { config, lib, pkgs, cfg, storagePath, ... }: {
+  flake.nixosModules.stalwart = { config, lib, pkgs, cfg, exchangePath, ... }: {
 
     systemd.tmpfiles.rules = [
-      "d ${storagePath}/exchange/stalwart 0750 stalwart-mail stalwart-mail - -"
+      "d ${exchangePath}/stalwart       0750 stalwart-mail stalwart-mail - -"
+      "d ${exchangePath}/stalwart/blobs 0750 stalwart-mail stalwart-mail - -"
     ];
+
+    services.postgresql.ensureDatabases = [ "stalwart" ];
+    services.postgresql.ensureUsers     = [{ name = "stalwart-mail"; ensureClauses.login = true; }];
+
+    systemd.services.postgresql-stalwart-setup = {
+      description = "Grant stalwart-mail privileges on stalwart database";
+      wantedBy    = [ "multi-user.target" ];
+      after       = [ "postgresql.service" ];
+      requires    = [ "postgresql.service" ];
+      serviceConfig = {
+        Type            = "oneshot";
+        User            = "postgres";
+        RemainAfterExit = true;
+      };
+      script = ''
+        set -e
+        ${config.services.postgresql.package}/bin/psql -c \
+          "GRANT ALL PRIVILEGES ON DATABASE stalwart TO \"stalwart-mail\";"
+        ${config.services.postgresql.package}/bin/psql -d stalwart -c \
+          "GRANT ALL ON SCHEMA public TO \"stalwart-mail\";"
+      '';
+    };
+
+    systemd.services.stalwart-mail = {
+      after    = [ "postgresql-stalwart-setup.service" ];
+      requires = [ "postgresql-stalwart-setup.service" ];
+    };
 
     services.stalwart-mail = {
       enable   = true;
@@ -36,19 +64,24 @@
           };
         };
         storage = {
-          data      = "rocksdb";
-          fts       = "rocksdb";
-          blob      = "rocksdb";
-          lookup    = "rocksdb";
+          data      = "db";
+          fts       = "db";
+          blob      = "blobs";
+          lookup    = "db";
           directory = "memory";
         };
-        store.rocksdb = {
-          type = "rocksdb";
-          path = "${storagePath}/exchange/stalwart";
-          compression = "lz4";
+        store.db = {
+          type     = "postgresql";
+          host     = "/run/postgresql/.s.PGSQL.5432";
+          database = "stalwart";
+          user     = "stalwart-mail";
+        };
+        store.blobs = {
+          type = "fs";
+          path = "${exchangePath}/stalwart/blobs";
         };
         directory.memory = {
-          type = "memory";
+          type       = "memory";
           principals = [];
         };
         tracer.stdout = {

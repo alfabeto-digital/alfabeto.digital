@@ -82,6 +82,7 @@
       ${cfg.admin_username} = {
         isNormalUser       = true;
         home               = "/home/${cfg.admin_username}";
+        homeMode           = "0751";
         extraGroups        = [ "wheel" "storage" ];
         hashedPasswordFile = config.sops.secrets.admin_password.path;
         openssh.authorizedKeys.keys = [ cfg.admin_ssh_key ];
@@ -139,6 +140,10 @@
 
     environment.systemPackages = with pkgs; [
       vim wget fzf kitty sops hostname bashtop gtop postgresql cryptsetup
+    ];
+
+    systemd.tmpfiles.rules = [
+      "d /home/${cfg.admin_username}/exchange 0755 ${cfg.admin_username} users - -"
     ];
 
     system.stateVersion = cfg.nixos_state_version;
