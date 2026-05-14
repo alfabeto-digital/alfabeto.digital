@@ -31,6 +31,11 @@
     systemd.services.stalwart-mail = {
       after    = [ "postgresql-stalwart-setup.service" ];
       requires = [ "postgresql-stalwart-setup.service" ];
+      serviceConfig = {
+        BindPaths      = [ "/run/postgresql" ];
+        ProtectHome    = lib.mkForce "no";
+        ReadWritePaths = [ "${exchangePath}/stalwart" ];
+      };
     };
 
     services.stalwart-mail = {
