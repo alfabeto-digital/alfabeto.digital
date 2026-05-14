@@ -15,10 +15,10 @@
     boot.initrd.network = {
       enable = true;
       ssh = {
-        enable             = true;
-        port               = cfg.initrd_ssh_port;
-        authorizedKeyFiles = [ "/etc/secrets/initrd/authorized_keys" ];
-        hostKeys           = [ "/etc/secrets/initrd/ssh_host_ed25519_key" ];
+        enable          = true;
+        port            = cfg.initrd_ssh_port;
+        authorizedKeys  = [ cfg.admin_ssh_key ];
+        hostKeys        = [ "/etc/secrets/initrd/ssh_host_ed25519_key" ];
       };
     };
 
