@@ -72,7 +72,7 @@
         };
         store.db = {
           type     = "postgresql";
-          host     = "/run/postgresql/.s.PGSQL.5432";
+          host     = "/run/postgresql";
           database = "stalwart";
           user     = "stalwart-mail";
         };
