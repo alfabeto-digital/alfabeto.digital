@@ -52,6 +52,26 @@
               reverse_proxy localhost:${toString cfg.adguard_port}
             }
 
+            @auth host auth.${cfg.domain}
+            handle @auth {
+              reverse_proxy localhost:${toString cfg.authelia_port}
+            }
+
+            @warden host warden.${cfg.domain}
+            handle @warden {
+              reverse_proxy localhost:${toString cfg.vaultwarden_port}
+            }
+
+            @sync host sync.${cfg.domain}
+            handle @sync {
+              reverse_proxy localhost:${toString cfg.syncthing_port}
+            }
+
+            @matrix host matrix.${cfg.domain}
+            handle @matrix {
+              reverse_proxy localhost:${toString cfg.dendrite_port}
+            }
+
             handle {
               root * /var/www/${cfg.domain}
               file_server
