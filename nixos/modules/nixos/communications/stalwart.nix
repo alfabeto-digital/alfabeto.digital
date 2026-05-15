@@ -32,9 +32,15 @@
       after    = [ "postgresql-stalwart-setup.service" ];
       requires = [ "postgresql-stalwart-setup.service" ];
       serviceConfig = {
-        ProtectHome   = lib.mkForce "no";
+        ProtectHome    = lib.mkForce "no";
         ReadWritePaths = [ "${exchangePath}/stalwart" ];
         ReadOnlyPaths  = [ "/run/secrets" ];
+        # ExecStartPre runs as root (+) outside the sandbox, writes env file
+        # so the %{env:...}% macro in management.secret can expand correctly.
+        ExecStartPre = lib.mkBefore [
+          "+${pkgs.bash}/bin/bash -c 'printf STALWART_ADMIN_PASSWORD= > /run/stalwart-env && cat ${config.sops.secrets.stalwart_admin_password.path} >> /run/stalwart-env && chmod 600 /run/stalwart-env && chown stalwart-mail /run/stalwart-env'"
+        ];
+        EnvironmentFile = "/run/stalwart-env";
       };
     };
 
@@ -100,7 +106,7 @@
             email  = [ "authelia@alfabeto.digital" ];
           }];
         };
-        management.secret = "%{file:${config.sops.secrets.stalwart_admin_password.path}}%";
+        management.secret = "%{env:STALWART_ADMIN_PASSWORD}%";
 
         tracer.stdout = {
           type   = "stdout";
