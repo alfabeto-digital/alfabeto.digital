@@ -32,8 +32,9 @@
       after    = [ "postgresql-stalwart-setup.service" ];
       requires = [ "postgresql-stalwart-setup.service" ];
       serviceConfig = {
-        ProtectHome    = lib.mkForce "no";
+        ProtectHome   = lib.mkForce "no";
         ReadWritePaths = [ "${exchangePath}/stalwart" ];
+        ReadOnlyPaths  = [ "/run/secrets" ];
       };
     };
 
