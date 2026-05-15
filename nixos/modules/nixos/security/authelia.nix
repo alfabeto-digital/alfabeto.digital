@@ -93,11 +93,9 @@
         };
 
         notifier.smtp = {
-          host     = "127.0.0.1";
-          port     = 587;
+          address  = "smtp://127.0.0.1:587";
           sender   = "Authelia <authelia@alfabeto.digital>";
           username = "authelia";
-          tls.enabled = false;
         };
       };
     };
