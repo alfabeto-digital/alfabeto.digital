@@ -24,7 +24,7 @@
 
             @mail host mail.${cfg.domain}
             handle @mail {
-              forward_auth localhost:${toString cfg.authelia_port} {
+              forward_auth 127.0.0.1:${toString cfg.authelia_port} {
                 uri /api/authz/forward-auth
                 header_up X-Forwarded-Proto "https"
                 copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
@@ -34,7 +34,7 @@
 
             @ntfy host ntfy.${cfg.domain}
             handle @ntfy {
-              forward_auth localhost:${toString cfg.authelia_port} {
+              forward_auth 127.0.0.1:${toString cfg.authelia_port} {
                 uri /api/authz/forward-auth
                 header_up X-Forwarded-Proto "https"
                 copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
@@ -44,7 +44,7 @@
 
             @adguard host adguard.${cfg.domain}
             handle @adguard {
-              forward_auth localhost:${toString cfg.authelia_port} {
+              forward_auth 127.0.0.1:${toString cfg.authelia_port} {
                 uri /api/authz/forward-auth
                 header_up X-Forwarded-Proto "https"
                 copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
@@ -85,7 +85,7 @@
 
         "ntfy.${cfg.domain}" = {
           extraConfig = ''
-            forward_auth localhost:${toString cfg.authelia_port} {
+            forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
               copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
             }
@@ -95,7 +95,7 @@
 
         "mail.${cfg.domain}" = {
           extraConfig = ''
-            forward_auth localhost:${toString cfg.authelia_port} {
+            forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
               copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
             }
@@ -105,7 +105,7 @@
 
         "adguard.${cfg.domain}" = {
           extraConfig = ''
-            forward_auth localhost:${toString cfg.authelia_port} {
+            forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
               copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
             }
