@@ -26,6 +26,7 @@
             handle @mail {
               forward_auth localhost:${toString cfg.authelia_port} {
                 uri /api/authz/forward-auth
+                header_up X-Forwarded-Proto "https"
                 copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
               }
               reverse_proxy localhost:${toString cfg.stalwart_port}
@@ -35,6 +36,7 @@
             handle @ntfy {
               forward_auth localhost:${toString cfg.authelia_port} {
                 uri /api/authz/forward-auth
+                header_up X-Forwarded-Proto "https"
                 copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
               }
               reverse_proxy localhost:${toString cfg.ntfy_port}
@@ -44,6 +46,7 @@
             handle @adguard {
               forward_auth localhost:${toString cfg.authelia_port} {
                 uri /api/authz/forward-auth
+                header_up X-Forwarded-Proto "https"
                 copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
               }
               reverse_proxy localhost:${toString cfg.adguard_port}
