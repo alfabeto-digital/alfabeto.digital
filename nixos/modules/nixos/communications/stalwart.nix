@@ -94,7 +94,7 @@
           type       = "memory";
           principals = [{
             name   = "authelia";
-            type   = "individual";
+            class  = "individual";
             secret = "%{file:${config.sops.secrets.authelia_smtp_password.path}}%";
             email  = [ "authelia@alfabeto.digital" ];
           }];
