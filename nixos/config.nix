@@ -42,7 +42,7 @@
   admin_username     = "coyote";
   # SSH public key for the admin user and initrd unlock.
   # Not a secret — paste the full contents of ~/.ssh/id_ed25519.pub here.
-  admin_ssh_key      = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFDzt0xpIooI9TG2oITP+p23Ju8IBbn5YPnsiaw2YnnV services@alfabeto.digital"; # <-- REPLACE
+  admin_ssh_key      = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/6wS3VY+sTtX7NEEZgwa1ojx+J2sg6TuY4Z3k60A17 coyote@alfabeto.digital"; # <-- REPLACE
   syncthing_username = "syncthing";
   vaultwarden_username = "vaultwarden";
   ftp_username       = "ftp";
@@ -79,7 +79,7 @@
   ###############################################################
 
   domain     = "alfabeto.digital";
-  email_acme = "services@alfabeto.digital";
+  email_acme = "y00ozntu@alfabeto.digital";
 
   ###############################################################
   # Service ports

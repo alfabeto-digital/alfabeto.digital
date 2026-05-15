@@ -3,3 +3,6 @@
 
 # Ignore GIMP files
 *.xcf
+
+# Ignore secrets.plain
+secrets.plain
