@@ -28,18 +28,28 @@
       '';
     };
 
+    systemd.services.stalwart-env-setup = {
+      description = "Write Stalwart admin environment file";
+      wantedBy    = [ "stalwart-mail.service" ];
+      before      = [ "stalwart-mail.service" ];
+      serviceConfig = {
+        Type            = "oneshot";
+        RemainAfterExit = true;
+        ExecStart       = "${pkgs.writeShellScript "stalwart-env-setup" ''
+          printf 'STALWART_ADMIN_PASSWORD=' > /run/stalwart-env
+          cat ${config.sops.secrets.stalwart_admin_password.path} >> /run/stalwart-env
+          chmod 600 /run/stalwart-env
+        ''}";
+      };
+    };
+
     systemd.services.stalwart-mail = {
-      after    = [ "postgresql-stalwart-setup.service" ];
+      after    = [ "postgresql-stalwart-setup.service" "stalwart-env-setup.service" ];
       requires = [ "postgresql-stalwart-setup.service" ];
       serviceConfig = {
-        ProtectHome    = lib.mkForce "no";
-        ReadWritePaths = [ "${exchangePath}/stalwart" ];
-        ReadOnlyPaths  = [ "/run/secrets" ];
-        # ExecStartPre runs as root (+) outside the sandbox, writes env file
-        # so the %{env:...}% macro in management.secret can expand correctly.
-        ExecStartPre = lib.mkBefore [
-          "+${pkgs.bash}/bin/bash -c 'printf STALWART_ADMIN_PASSWORD= > /run/stalwart-env && cat ${config.sops.secrets.stalwart_admin_password.path} >> /run/stalwart-env && chmod 600 /run/stalwart-env && chown stalwart-mail /run/stalwart-env'"
-        ];
+        ProtectHome     = lib.mkForce "no";
+        ReadWritePaths  = [ "${exchangePath}/stalwart" ];
+        ReadOnlyPaths   = [ "/run/secrets" ];
         EnvironmentFile = "/run/stalwart-env";
       };
     };
