@@ -94,8 +94,8 @@
 
         notifier.smtp = {
           address         = "smtp://127.0.0.1:587";
-          sender          = "Authelia <authelia@alfabeto.digital>";
-          username        = "authelia";
+          sender          = "Authelia <${cfg.authelia_smtp_username}@${cfg.domain}>";
+          username        = cfg.authelia_smtp_username;
           tls.skip_verify = true;
         };
       };

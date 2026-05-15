@@ -92,6 +92,8 @@
   initrd_ssh_port    = 2222;
 
   # Paso 3 — communications & security services (all internal; exposed via Caddy in Paso 4)
+  authelia_smtp_username = "authelia";  # Stalwart account used by Authelia to send notifications
+
   adguard_port  = 3000;    # AdGuard Home admin UI
   authelia_port = 9091;    # Authelia SSO / 2FA
   dendrite_port = 8008;    # Dendrite Matrix homeserver HTTP
