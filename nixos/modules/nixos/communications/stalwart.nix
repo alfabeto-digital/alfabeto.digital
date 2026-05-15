@@ -99,6 +99,8 @@
             email  = [ "authelia@alfabeto.digital" ];
           }];
         };
+        management.secret = "%{file:${config.sops.secrets.stalwart_admin_password.path}}%";
+
         tracer.stdout = {
           type   = "stdout";
           level  = "warn";
@@ -107,7 +109,8 @@
       };
     };
 
-    sops.secrets.authelia_smtp_password = { mode = "0444"; };
+    sops.secrets.authelia_smtp_password  = { mode = "0444"; };
+    sops.secrets.stalwart_admin_password = { owner = "stalwart-mail"; mode = "0400"; };
 
     networking.firewall.allowedTCPPorts = [ 25 465 143 993 ];
   };
