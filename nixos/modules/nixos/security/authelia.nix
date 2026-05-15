@@ -44,6 +44,9 @@
     systemd.services.authelia-main = {
       after    = [ "postgresql-authelia-setup.service" ];
       requires = [ "postgresql-authelia-setup.service" ];
+      environment = {
+        AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE = config.sops.secrets.authelia_smtp_password.path;
+      };
       serviceConfig = {
         ProtectHome    = lib.mkForce "no";
         ReadWritePaths = [ "${exchangePath}/authelia" ];
@@ -56,7 +59,6 @@
         jwtSecretFile            = config.sops.secrets.authelia_jwt_secret.path;
         sessionSecretFile        = config.sops.secrets.authelia_session_secret.path;
         storageEncryptionKeyFile = config.sops.secrets.authelia_storage_key.path;
-        smtpPasswordFile         = config.sops.secrets.authelia_smtp_password.path;
       };
       settings = {
         theme              = "dark";
