@@ -24,11 +24,6 @@
 
             @mail host mail.${cfg.domain}
             handle @mail {
-              forward_auth 127.0.0.1:${toString cfg.authelia_port} {
-                uri /api/authz/forward-auth
-                header_up X-Forwarded-Proto "https"
-                copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-              }
               reverse_proxy localhost:${toString cfg.stalwart_port}
             }
 
@@ -115,10 +110,6 @@
 
         "mail.${cfg.domain}" = {
           extraConfig = ''
-            forward_auth 127.0.0.1:${toString cfg.authelia_port} {
-              uri /api/authz/forward-auth
-              copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-            }
             reverse_proxy localhost:${toString cfg.stalwart_port}
           '';
         };
