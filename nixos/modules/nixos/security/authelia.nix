@@ -65,10 +65,8 @@
         default_2fa_method = "totp";
         log.level          = "info";
 
-        server = {
-          address         = "tcp://127.0.0.1:${toString cfg.authelia_port}";
-          trusted_proxies = [ "127.0.0.1/8" "::1/128" ];
-        };
+        server.address  = "tcp://127.0.0.1:${toString cfg.authelia_port}";
+        trusted_proxies = [ "127.0.0.1/8" "::1/128" ];
 
         storage.postgres = {
           address  = "unix:///run/postgresql";
