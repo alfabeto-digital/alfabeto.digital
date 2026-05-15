@@ -61,12 +61,17 @@
               protocol = "imap";
               tls.implicit = true;
             };
+            submission = {
+              bind     = [ "127.0.0.1:587" ];
+              protocol = "smtp";
+            };
             http = {
               bind     = [ "127.0.0.1:${toString cfg.stalwart_port}" ];
               protocol = "http";
             };
           };
         };
+        "session.auth.allow-plain-text" = true;
         storage = {
           data      = "db";
           fts       = "db";
@@ -87,7 +92,12 @@
         };
         directory.memory = {
           type       = "memory";
-          principals = [];
+          principals = [{
+            name   = "authelia";
+            type   = "individual";
+            secret = "%{file:${config.sops.secrets.authelia_smtp_password.path}}%";
+            email  = [ "authelia@alfabeto.digital" ];
+          }];
         };
         tracer.stdout = {
           type   = "stdout";
@@ -96,6 +106,8 @@
         };
       };
     };
+
+    sops.secrets.authelia_smtp_password = { mode = "0444"; };
 
     networking.firewall.allowedTCPPorts = [ 25 465 143 993 ];
   };

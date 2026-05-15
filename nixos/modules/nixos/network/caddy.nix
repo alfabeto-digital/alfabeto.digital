@@ -51,13 +51,31 @@
 
         "ntfy.${cfg.domain}" = {
           extraConfig = ''
+            forward_auth localhost:${toString cfg.authelia_port} {
+              uri /api/authz/forward-auth
+              copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+            }
             reverse_proxy localhost:${toString cfg.ntfy_port}
           '';
         };
 
         "mail.${cfg.domain}" = {
           extraConfig = ''
+            forward_auth localhost:${toString cfg.authelia_port} {
+              uri /api/authz/forward-auth
+              copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+            }
             reverse_proxy localhost:${toString cfg.stalwart_port}
+          '';
+        };
+
+        "adguard.${cfg.domain}" = {
+          extraConfig = ''
+            forward_auth localhost:${toString cfg.authelia_port} {
+              uri /api/authz/forward-auth
+              copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+            }
+            reverse_proxy localhost:${toString cfg.adguard_port}
           '';
         };
       };

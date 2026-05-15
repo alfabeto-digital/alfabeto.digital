@@ -16,6 +16,7 @@
       authelia_session_secret = { owner = "authelia-main"; mode = "0400"; };
       authelia_storage_key    = { owner = "authelia-main"; mode = "0400"; };
       authelia_users_file     = { owner = "authelia-main"; mode = "0400"; };
+      authelia_smtp_password  = { mode = "0444"; };
     };
 
     services.postgresql.ensureDatabases = [ "authelia" ];
@@ -55,6 +56,7 @@
         jwtSecretFile            = config.sops.secrets.authelia_jwt_secret.path;
         sessionSecretFile        = config.sops.secrets.authelia_session_secret.path;
         storageEncryptionKeyFile = config.sops.secrets.authelia_storage_key.path;
+        smtpPasswordFile         = config.sops.secrets.authelia_smtp_password.path;
       };
       settings = {
         theme              = "dark";
@@ -79,15 +81,21 @@
 
         access_control = {
           default_policy = "two_factor";
-          rules          = [];
+          rules          = [
+            { domain = "auth.${cfg.domain}"; policy = "bypass"; }
+          ];
         };
 
         authentication_backend.file = {
           path = config.sops.secrets.authelia_users_file.path;
         };
 
-        notifier.filesystem = {
-          filename = "${exchangePath}/authelia/notifications.txt";
+        notifier.smtp = {
+          host     = "127.0.0.1";
+          port     = 587;
+          sender   = "Authelia <authelia@alfabeto.digital>";
+          username = "authelia";
+          tls.enabled = false;
         };
       };
     };
