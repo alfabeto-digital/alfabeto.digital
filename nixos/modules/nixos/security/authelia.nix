@@ -93,9 +93,10 @@
         };
 
         notifier.smtp = {
-          address  = "smtp://127.0.0.1:587";
-          sender   = "Authelia <authelia@alfabeto.digital>";
-          username = "authelia";
+          address         = "smtp://127.0.0.1:587";
+          sender          = "Authelia <authelia@alfabeto.digital>";
+          username        = "authelia";
+          tls.skip_verify = true;
         };
       };
     };
