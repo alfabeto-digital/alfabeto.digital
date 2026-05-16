@@ -1,0 +1,15 @@
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+  [entryPoints.websecure]
+    address = ":443"
+
+[log]
+  level = "INFO"
+
+[providers]
+  [providers.docker]
+    exposedByDefault = false
+  [providers.file]
+    directory = "/etc/traefik/dynamic"
+    watch = true

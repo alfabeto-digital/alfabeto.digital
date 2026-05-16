@@ -24,7 +24,7 @@ in {
 
       # Network
       self.nixosModules.caddy
-      self.nixosModules.cloudflare
+      self.nixosModules.newt
 
       # Services
       self.nixosModules.vaultwarden

@@ -1,0 +1,6 @@
+# Gerbil configuration (WireGuard manager for Pangolin).
+# See: https://github.com/fosrl/gerbil for full docs.
+
+wg_interface: "wg0"
+wg_port: 51820
+pangolin_endpoint: "http://127.0.0.1:3000"  # host network (gerbil uses network_mode: host)

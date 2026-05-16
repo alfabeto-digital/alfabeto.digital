@@ -1,0 +1,23 @@
+# Pangolin server configuration.
+# See: https://github.com/fosrl/pangolin for full docs.
+# After first run, create sites and Newt clients via the Pangolin admin panel.
+
+app:
+  log_level: "info"
+  save_logs: false
+  base_domain: "FILL_YOUR_VPS_DOMAIN"  # apex domain for tunnel subdomains (e.g. vps.yourserver.com — sites become <name>.vps.yourserver.com)
+
+server:
+  external_port: 443          # public HTTPS port (handled by Traefik)
+  internal_port: 3000         # Pangolin's own HTTP port (Traefik routes /pangolin to this)
+  session_cookie_secure: true
+
+traefik:
+  cert_resolver: ""           # empty = no ACME in Traefik (Caddy handles certs)
+
+gerbil:
+  start_port: 51820           # WireGuard port
+  base_endpoint: "YOUR_VPS_IP"
+
+database:
+  path: "/app/data/pangolin.db"
