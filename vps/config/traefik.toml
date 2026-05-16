@@ -8,8 +8,6 @@
   level = "INFO"
 
 [providers]
-  [providers.docker]
-    exposedByDefault = false
   [providers.file]
     directory = "/etc/traefik/dynamic"
     watch = true

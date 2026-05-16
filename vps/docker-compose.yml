@@ -1,0 +1,41 @@
+name: pangolin-vps
+
+services:
+  traefik:
+    image: traefik:v3.0
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/traefik.toml:/etc/traefik/traefik.toml:ro
+      - ./config/dynamic:/etc/traefik/dynamic:ro
+    restart: always
+
+  pangolin:
+    image: fosrl/pangolin:latest
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./config/pangolin.yaml:/app/config/config.yaml:ro
+      - pangolin_data:/app/data
+    env_file:
+      - ./secrets.env
+    depends_on:
+      - traefik
+    restart: always
+
+  gerbil:
+    image: fosrl/gerbil:latest
+    volumes:
+      - ./config/gerbil.yaml:/app/config/config.yaml:ro
+    env_file:
+      - ./secrets.env
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
+    depends_on:
+      - pangolin
+    restart: always
+
+volumes:
+  pangolin_data:
