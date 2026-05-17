@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:v3.0
+    image: docker.io/library/traefik:v3.0
     ports:
       - "80:80"
       - "443:443"
@@ -10,7 +10,7 @@ services:
     restart: always
 
   pangolin:
-    image: fosrl/pangolin:latest
+    image: docker.io/fosrl/pangolin:latest
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
@@ -23,7 +23,7 @@ services:
     restart: always
 
   gerbil:
-    image: fosrl/gerbil:latest
+    image: docker.io/fosrl/gerbil:latest
     volumes:
       - ./config/gerbil.yaml:/app/config/config.yaml:ro
     env_file:
