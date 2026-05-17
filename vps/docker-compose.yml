@@ -1,5 +1,3 @@
-name: pangolin-vps
-
 services:
   traefik:
     image: traefik:v3.0
