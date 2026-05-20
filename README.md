@@ -211,7 +211,11 @@ All system parameters live in `nixos/config.nix`. Edit this file before the firs
 
 ---
 
-### 5. Configure secrets.plain and encrypt with sops
+### 5. Set up the age key and secrets
+
+> **Secrets strategy** — only template files (`*.plain.template`) are committed to the repo.
+> The filled plain files and the encrypted `.yaml` files are listed in `.gitignore` and must
+> never be committed. All secret work happens on the server itself.
 
 **a) Enter a nix-shell with the required tools:**
 
@@ -219,50 +223,48 @@ All system parameters live in `nixos/config.nix`. Edit this file before the firs
 nix-shell -p age sops
 ```
 
-**b) Generate the age key:**
+**b) Generate the age key for this host (first deploy only):**
 
 ```bash
 mkdir -p /root/.config/sops/age
 age-keygen -o /root/.config/sops/age/keys.txt
-age-keygen -y /root/.config/sops/age/keys.txt   # copy this public key for the next step
+age-keygen -y /root/.config/sops/age/keys.txt   # outputs the public key — copy it
 ```
 
-**c) Fill in `nixos/secrets/secrets.plain`:**
+Take the public key (starts with `age1...`) and update `.sops.yaml` in the repo:
 
 ```yaml
-# Hashed passwords — generate with: mkpasswd -m sha-512
-root_password: ""
-admin_password: ""
-
-# SSH public key of the authorized machine
-# Get it with: cat ~/.ssh/id_ed25519.pub
-# Also copy it to /etc/secrets/initrd/authorized_keys (step 3)
-admin_ssh_key: ""
-
-# Database password (plain text, not hashed)
-db_password: ""
-
-# Cloudflare Zero Trust tunnel token (from the dashboard)
-cloudflare_token: ""
-
-# Encryption key for nvme1 — generate with:
-#   python3 -c "import secrets; print(secrets.token_hex(32))"
-luks_data_key: ""
+creation_rules:
+  - path_regex: nixos/secrets/secrets\.yaml$
+    age: "age1..."   # paste public key here
 ```
+
+Commit and push that change. The public key is **not** a secret.
+
+**c) Copy the template and fill in values:**
+
+```bash
+cp nixos/secrets/secrets.plain.template nixos/secrets/secrets.plain
+$EDITOR nixos/secrets/secrets.plain
+```
+
+Generation commands for each value are documented inside the template file.
 
 **d) Encrypt and delete the plain file:**
 
 ```bash
-sops --encrypt --age 'age1...' ./secrets/secrets.plain > ./secrets/secrets.yaml
-rm ./secrets/secrets.plain
+sops --encrypt nixos/secrets/secrets.plain > nixos/secrets/secrets.yaml
+rm nixos/secrets/secrets.plain
 ```
+
+(With `.sops.yaml` configured, `sops --encrypt` picks the age key automatically.)
 
 **e) Enroll `luks_data_key` in the nvme1 LUKS header:**
 
 This allows the system to unlock nvme1 automatically at every boot using the sops-managed key, while keeping the emergency passphrase from step 2 as a backup in a separate key slot.
 
 ```bash
-LUKS_KEY=$(sops --decrypt --extract '["luks_data_key"]' ./secrets/secrets.yaml)
+LUKS_KEY=$(sops --decrypt --extract '["luks_data_key"]' nixos/secrets/secrets.yaml)
 echo "$LUKS_KEY" | cryptsetup luksAddKey /dev/nvme1n1
 # enter the emergency passphrase from step 2 when prompted
 unset LUKS_KEY
@@ -338,6 +340,96 @@ update-nixos
 
 ---
 
+---
+
+## VPS (Pangolin server) deployment
+
+The VPS runs the Pangolin/Gerbil/Traefik stack via `nixosConfigurations.vps` (auto-discovered
+by `import-tree ./modules`). It uses its **own age key**, completely separate from
+`alfabeto.digital`, so a VPS compromise cannot decrypt the main machine's secrets.
+
+### Before the first deploy
+
+**1. Fill `nixos/config-vps.nix`:**
+
+```nix
+vps_ip        = "1.2.3.4";            # public IP of the VPS
+container_runtime = "flake";          # or "podman" / "docker"
+```
+
+**2. Get or generate a NixOS installer on the VPS.**
+
+If the VPS already runs any Linux distro, use [nixos-anywhere](https://github.com/nix-community/nixos-anywhere):
+
+```bash
+# From your local machine (needs nix + ssh access to root@<VPS_IP>)
+nix run github:nix-community/nixos-anywhere -- \
+  --flake .#vps root@<VPS_IP>
+```
+
+If the VPS already runs NixOS, skip to step 3.
+
+**3. On the VPS, generate its age key:**
+
+```bash
+nix-shell -p age sops
+mkdir -p /root/.config/sops/age
+age-keygen -o /root/.config/sops/age/keys.txt
+age-keygen -y /root/.config/sops/age/keys.txt   # copy the public key
+```
+
+Update `.sops.yaml` in the repo with the VPS public key:
+
+```yaml
+creation_rules:
+  - path_regex: nixos/secrets/secrets-vps\.yaml$
+    age: "age1..."   # paste VPS public key here
+```
+
+Commit and push.
+
+**4. On the VPS, fill and encrypt the VPS secrets:**
+
+```bash
+# Pull the latest repo commit (with the updated .sops.yaml)
+cd ~/alfabeto.digital && git pull
+
+cp nixos/secrets/secrets-vps.plain.template nixos/secrets/secrets-vps.plain
+$EDITOR nixos/secrets/secrets-vps.plain     # fill passwords and gerbil_pangolin_token
+
+sops --encrypt nixos/secrets/secrets-vps.plain > nixos/secrets/secrets-vps.yaml
+rm nixos/secrets/secrets-vps.plain
+```
+
+**5. Build and activate:**
+
+```bash
+nixos-rebuild switch --flake /root/alfabeto.digital/nixos#vps
+```
+
+Or from your local machine (cross-build + deploy):
+
+```bash
+nixos-rebuild switch --flake .#vps --target-host root@<VPS_IP>
+```
+
+**6. After the first Newt connection:**
+
+Open the Pangolin admin panel → Sites → your site → Peers and note the WireGuard IP
+assigned to the Newt client (`10.x.x.x`). Set it in `config-vps.nix`:
+
+```nix
+newt_peer_ip = "10.x.x.x";
+```
+
+Rebuild the VPS to activate the updated Traefik routes:
+
+```bash
+nixos-rebuild switch --flake /root/alfabeto.digital/nixos#vps
+```
+
+---
+
 ## nixos/ file reference
 
 | File | Description |
@@ -347,7 +439,9 @@ update-nixos
 | `flake.nix` | Nix Flakes entrypoint — reads the channel version from `config.nix` |
 | `hardware-configuration.nix` | Auto-generated by the installer — do not edit or commit |
 | `home/default.nix` | User environment configuration (home-manager) |
-| `secrets/secrets.yaml` | Secrets encrypted with sops-nix and age |
-| `secrets/secrets.plain` | Secrets template — delete after encrypting |
+| `secrets/secrets.plain.template` | Secrets template for alfabeto.digital — commit with empty values |
+| `secrets/secrets-vps.plain.template` | Secrets template for the VPS — commit with empty values |
+| `secrets/secrets.yaml` | Encrypted secrets for alfabeto.digital — gitignored, lives on server only |
+| `secrets/secrets-vps.yaml` | Encrypted secrets for the VPS — gitignored, lives on VPS only |
 | `00-hallucinations/` | Earlier configuration drafts kept for reference — not used in production |
 | `replicate-grub/` | ISOs and custom Ventoy theme for the installation USB |

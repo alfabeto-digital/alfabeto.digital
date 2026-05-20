@@ -3,3 +3,11 @@
 
 # Ignore GIMP files
 *.xcf
+
+# Secrets — filled or encrypted files must NEVER be committed.
+# Only *.template files (with empty values) are committed.
+secrets.plain
+secrets-vps.plain
+secrets.yaml
+secrets-vps.yaml
+secrets.env
