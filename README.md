@@ -171,6 +171,7 @@ template and fill in all values before the first build:
 ```bash
 cp nixos/config.nix.template nixos/config.nix
 $EDITOR nixos/config.nix
+rm nixos/config-vps.nix.template   # not needed on this machine
 ```
 
 Key fields to fill:
@@ -411,6 +412,7 @@ compromise cannot decrypt the main machine's secrets.
 ```bash
 cp nixos/config-vps.nix.template nixos/config-vps.nix
 $EDITOR nixos/config-vps.nix
+rm nixos/config.nix.template   # not needed on the VPS
 ```
 
 Key fields:
