@@ -15,6 +15,7 @@ nixos/00-hallucinations/
 # Secrets and sops config — filled or encrypted files must NEVER be committed.
 # Only *.template files (with empty values) are committed.
 .sops.yaml
+.sops-vps.yaml
 secrets.plain
 secrets-vps.plain
 secrets.yaml

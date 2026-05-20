@@ -245,18 +245,24 @@ age-keygen -o /root/.config/sops/age/keys.txt
 age-keygen -y /root/.config/sops/age/keys.txt   # outputs the public key — copy it
 ```
 
-Take the public key (starts with `age1...`) and create `.sops.yaml` from the template:
+Take the public key (starts with `age1...`) and create `.sops.yaml` from the selfhosted server template:
 
 ```bash
 cp .sops.yaml.template .sops.yaml
 ```
 
-Fill in the public key for this host:
+Fill in the public key:
 
 ```yaml
 creation_rules:
   - path_regex: nixos/secrets/secrets\.yaml$
     age: "age1..."   # paste public key here
+```
+
+Delete the VPS template — it is not needed on this machine:
+
+```bash
+rm .sops-vps.yaml.template
 ```
 
 `.sops.yaml` is gitignored and stays on the server only.
@@ -435,16 +441,22 @@ age-keygen -o /root/.config/sops/age/keys.txt
 age-keygen -y /root/.config/sops/age/keys.txt   # copy the public key
 ```
 
-Create `.sops.yaml` from the template and fill in the VPS public key:
+Create `.sops.yaml` from the VPS template and fill in the VPS public key:
 
 ```bash
-cp .sops.yaml.template .sops.yaml
+cp .sops-vps.yaml.template .sops.yaml
 ```
 
 ```yaml
 creation_rules:
   - path_regex: nixos/secrets/secrets-vps\.yaml$
     age: "age1..."   # paste VPS public key here
+```
+
+Delete the selfhosted server template — it is not needed on the VPS:
+
+```bash
+rm .sops.yaml.template
 ```
 
 `.sops.yaml` is gitignored and stays on the VPS only.

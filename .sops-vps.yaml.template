@@ -1,0 +1,19 @@
+# ============================================================
+# TEMPLATE — VPS. COMMIT THIS FILE.
+#
+# Instructions:
+#   1. On the VPS:
+#        cp .sops-vps.yaml.template .sops.yaml
+#   2. Fill in the VPS age public key:
+#        age-keygen -y /root/.config/sops/age/keys.txt
+#   3. Delete the selfhosted server template (not needed on the VPS):
+#        rm .sops.yaml.template
+#   4. .sops.yaml is gitignored — it stays on the VPS only.
+#
+# With .sops.yaml in place, `sops --encrypt` auto-selects the
+# right key without needing --age on the command line.
+# ============================================================
+
+creation_rules:
+  - path_regex: nixos/secrets/secrets-vps\.yaml$
+    age: "FILL_AGE_PUBLIC_KEY"
