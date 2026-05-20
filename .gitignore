@@ -20,3 +20,6 @@ secrets-vps.plain
 secrets.yaml
 secrets-vps.yaml
 secrets.env
+
+# Claude Code settings
+.claude

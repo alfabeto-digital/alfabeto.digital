@@ -17,7 +17,9 @@
   # NixOS versions
   ###############################################################
 
-  # Used in flake.nix to set the channel URLs for nixpkgs and home-manager.
+  # Informational — documents the channel at installation time.
+  # The nixpkgs URL in flake.nix is hardcoded; update it manually when upgrading
+  # (edit flake.nix URL + run: nix flake update).
   nixos_channel_version = "25.11";
 
   # Reflects the NixOS version at initial installation.

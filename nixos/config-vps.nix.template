@@ -35,7 +35,7 @@
   # Users
   ###############################################################
 
-  admin_username = "";   # primary admin user (same as on homeserver)
+  admin_username = "";   # primary admin user (same as on selfhosted server)
 
   # SSH public key for the admin user.
   # paste the full contents of ~/.ssh/id_ed25519.pub here.
@@ -47,7 +47,7 @@
   # Network / tunnel (Pangolin server)
   ###############################################################
 
-  domain = "";   # primary domain, same as homeserver config.nix
+  domain = "";   # primary domain, same as selfhosted server config.nix
 
   # Public IP of this VPS. Fill before first deploy.
   vps_ip = "FILL_VPS_PUBLIC_IP";
@@ -55,7 +55,7 @@
   # Internal Pangolin API port (Gerbil connects here).
   pangolin_port = 3000;
 
-  # WireGuard peer IP assigned by Pangolin to the Newt client on the homeserver.
+  # WireGuard peer IP assigned by Pangolin to the Newt client on the selfhosted server.
   # Fill after the first Newt connection (visible in Pangolin admin panel → Sites → peers).
   newt_peer_ip = "FILL_AFTER_NEWT_CONNECTS";
 

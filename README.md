@@ -3,64 +3,71 @@
 
 ```
 .
+├── .gitattributes
+├── .gitignore
+├── .sops.yaml.template
 ├── LICENSE
 ├── README.md
 ├── nixos
-│   ├── 00-hallucinations
-│   │   ├── configuration-v.0.0.nix
-│   │   └── configuration.nix
-│   ├── config.nix
-│   ├── configuration.nix
+│   ├── .config
+│   │   └── awesome
+│   │       ├── error_handling.lua
+│   │       ├── functions.lua
+│   │       ├── globals.lua
+│   │       ├── keybindings.lua
+│   │       ├── rc.lua
+│   │       ├── rules.lua
+│   │       ├── theme.lua
+│   │       ├── wibar.lua
+│   │       └── widgets/
+│   ├── config.nix.template
+│   ├── config-vps.nix.template
 │   ├── flake.nix
+│   ├── hardware-configuration-vps.nix
 │   ├── home
 │   │   └── default.nix
+│   ├── modules
+│   │   ├── hosts
+│   │   │   ├── alfabeto.digital
+│   │   │   │   └── default.nix
+│   │   │   └── vps
+│   │   │       └── default.nix
+│   │   └── nixos
+│   │       ├── admin.nix
+│   │       ├── base.nix
+│   │       ├── database.nix
+│   │       ├── storage.nix
+│   │       ├── communications
+│   │       │   ├── dendrite.nix
+│   │       │   ├── ntfy.nix
+│   │       │   └── stalwart.nix
+│   │       ├── network
+│   │       │   ├── caddy.nix
+│   │       │   ├── cloudflare.nix
+│   │       │   ├── newt.nix
+│   │       │   └── pangolin-server.nix
+│   │       ├── security
+│   │       │   ├── adguard.nix
+│   │       │   └── authelia.nix
+│   │       └── services
+│   │           ├── syncthing.nix
+│   │           └── vaultwarden.nix
 │   ├── replicate-grub
-│   │   ├── archlinux-2026.02.01-x86_64.iso
-│   │   ├── nixos-graphical-25.11.6495.e764fc9a4058-x86_64-linux.iso
-│   │   ├── nixos-minimal-25.11.6495.e764fc9a4058-x86_64-linux.iso
-│   │   ├── replicate-grub.xcf
-│   │   ├── replicate-logo.xcf
-│   │   └── ventoy
-│   │       ├── README.md
-│   │       ├── theme
-│   │       │   └── replicate
-│   │       │       ├── ShureTechMonoNerdFont-Regular-32.pf2
-│   │       │       ├── background.png
-│   │       │       └── theme.txt
-│   │       └── ventoy.json
+│   │   └── ventoy/
 │   └── secrets
-│       └── secrets.plain
-└── website
-    ├── assets
-    │   ├── css
-    │   │   ├── about.css
-    │   │   ├── header.css
-    │   │   ├── landing.css
-    │   │   ├── menu.css
-    │   │   └── styles.css
-    │   ├── fonts
-    │   │   ├── Gohu
-    │   │   ├── Monofur
-    │   │   ├── OpenDyslexic
-    │   │   └── ShareTechMono
-    │   ├── images
-    │   │   └── bg-texture.jpg
-    │   ├── js
-    │   │   ├── landing.js
-    │   │   └── scripts.js
-    │   └── library
-    │       └── transdisciplinariedad-martin-barbero.pdf
-    ├── components
-    │   ├── about.html
-    │   ├── header.html
-    │   ├── landing.html
-    │   └── menu.html
-    ├── index.html
-    └── pages
-        ├── search.html
-        ├── social.html
-        ├── soon.html
-        └── terminal.html
+│       ├── secrets.plain.template
+│       └── secrets-vps.plain.template
+└── vps
+    ├── .gitignore
+    ├── config
+    │   ├── dynamic
+    │   │   └── routes.toml
+    │   ├── gerbil.yaml
+    │   ├── pangolin.yaml
+    │   └── traefik.toml
+    ├── docker-compose.yml
+    ├── secrets.env.template
+    └── setup.sh
 ```
 
 ---
@@ -308,8 +315,8 @@ cp /etc/nixos/hardware-configuration.nix /tmp/hardware-configuration.nix
 Clone the repository and symlink the `nixos/` directory into place:
 
 ```bash
-git clone git@github.com:<your-org>/<your-repo>.git ~/homelab
-ln -sf ~/homelab/nixos /etc/nixos
+git clone git@github.com:<your-org>/<your-repo>.git ~/alfabeto.digital
+ln -sf ~/alfabeto.digital/nixos /etc/nixos
 ```
 
 Restore the machine-specific hardware configuration:
@@ -329,26 +336,41 @@ nixos-rebuild switch --flake .#$(nix eval --raw 'import ./config.nix'.hostname)
 
 ---
 
+## NixOS version management
+
+All hosts share one pinned nixpkgs defined in `flake.nix` and locked in `flake.lock`.
+`nixos_channel_version` in `config.nix` is informational only — it does not drive the
+nixpkgs URL. `nixos_state_version` reflects the NixOS version at initial installation
+and must never be changed after the first build; it can differ between hosts installed
+at different times.
+
+To upgrade nixpkgs across all hosts: edit the channel URL in `flake.nix`, then run
+`nix flake update`. Both hosts rebuild against the new pinned revision.
+
+---
+
 ## Updates
 
-From the server, using the shell alias defined in `home/default.nix`:
+Two shell aliases are defined in `home/default.nix`:
 
 ```bash
-update-nixos
+rebuild-nixos   # build only — no activation (use to check for errors first)
+switch-nixos    # build + activate
 ```
 
 Or manually:
 
 ```bash
-sudo nixos-rebuild switch --flake /etc/nixos#$(hostname)
+sudo nixos-rebuild build  --flake /etc/nixos#$(hostname)   # dry run
+sudo nixos-rebuild switch --flake /etc/nixos#$(hostname)   # activate
 ```
 
 To pull the latest configuration from the repository before rebuilding:
 
 ```bash
-cd ~/homelab
+cd ~/alfabeto.digital
 git pull
-update-nixos
+switch-nixos
 ```
 
 ---
@@ -372,7 +394,7 @@ choose based on the VPS operating system:
 
 ### Path A — NixOS deployment
 
-The VPS uses its **own age key**, completely separate from the homeserver, so a VPS
+The VPS uses its **own age key**, completely separate from the selfhosted server, so a VPS
 compromise cannot decrypt the main machine's secrets.
 
 ### Before the first deploy
@@ -387,7 +409,7 @@ $EDITOR nixos/config-vps.nix
 Key fields:
 ```nix
 hostname  = "";              # VPS hostname
-domain    = "";              # same domain as homeserver
+domain    = "";              # same domain as selfhosted server
 vps_ip    = "FILL_VPS_IP";  # public IP of the VPS
 container_runtime = "flake"; # or "podman" / "docker"
 ```
@@ -431,7 +453,7 @@ creation_rules:
 
 ```bash
 # Pull the latest repo commit (with the updated .sops.yaml)
-cd ~/homelab && git pull
+cd ~/alfabeto.digital && git pull
 
 cp nixos/secrets/secrets-vps.plain.template nixos/secrets/secrets-vps.plain
 $EDITOR nixos/secrets/secrets-vps.plain     # fill passwords and gerbil_pangolin_token
@@ -443,7 +465,7 @@ rm nixos/secrets/secrets-vps.plain
 **5. Build and activate:**
 
 ```bash
-nixos-rebuild switch --flake /root/homelab/nixos#vps
+nixos-rebuild switch --flake /root/alfabeto.digital/nixos#vps
 ```
 
 Or from your local machine (cross-build + deploy):
@@ -464,7 +486,7 @@ newt_peer_ip = "10.x.x.x";
 Rebuild the VPS to activate the updated Traefik routes:
 
 ```bash
-nixos-rebuild switch --flake /root/homelab/nixos#vps
+nixos-rebuild switch --flake /root/alfabeto.digital/nixos#vps
 ```
 
 ---
@@ -481,13 +503,13 @@ If you only need the `vps/` directory and not the full NixOS configuration, use 
 checkout to avoid downloading the rest of the repository:
 
 ```bash
-git clone --filter=blob:none --sparse git@github.com:<your-org>/<your-repo>.git homelab-vps
-cd homelab-vps
+git clone --filter=blob:none --sparse git@github.com:<your-org>/<your-repo>.git alfabeto.digital-vps
+cd alfabeto.digital-vps
 git sparse-checkout set vps
 ```
 
 This downloads only the `vps/` directory plus the root files (`.gitignore`, `README.md`).
-You can update later with `git pull` inside `homelab-vps/`.
+You can update later with `git pull` inside `alfabeto.digital-vps/`.
 
 Alternatively, if you already have a full clone, just `cd vps/`.
 
@@ -510,7 +532,7 @@ The WireGuard peer IP is only available after the first Newt connection (see ste
 Leave `FILL_AFTER_NEWT_CONNECTS` in place until then; update and restart once you have it.
 
 ```toml
-[tcp.routers.homeserver-https]
+[tcp.routers.selfhosted-server-https]
   rule = "HostSNIRegexp(`^(.+\\.)?your-domain\\.com$`)"
   ...
 
@@ -566,7 +588,7 @@ docker compose -f vps/docker-compose.yml up -d
 
 #### After the first Newt connection
 
-Once the homeserver's Newt client connects, open the Pangolin admin panel → Sites → Peers
+Once the selfhosted server's Newt client connects, open the Pangolin admin panel → Sites → Peers
 and note the WireGuard IP assigned to the Newt client (`10.x.x.x`). Update `routes.toml`:
 
 ```toml
@@ -582,7 +604,7 @@ docker compose restart traefik
 #### Updating
 
 ```bash
-cd homelab-vps   # or wherever your clone is
+cd alfabeto.digital-vps   # or wherever your clone is
 git pull
 cd vps
 docker compose pull
@@ -595,16 +617,16 @@ docker compose up -d
 
 | File | Description |
 |---|---|
-| `config.nix.template` | Homeserver config template — commit with empty values |
+| `config.nix.template` | Selfhosted server config template — commit with empty values |
 | `config-vps.nix.template` | VPS config template — commit with empty values |
-| `config.nix` | Homeserver config — gitignored, lives on server only |
+| `config.nix` | Selfhosted server config — gitignored, lives on server only |
 | `config-vps.nix` | VPS config — gitignored, lives on VPS only |
 | `flake.nix` | Nix Flakes entrypoint |
 | `hardware-configuration.nix` | Auto-generated by the installer — do not edit or commit |
 | `home/default.nix` | User environment configuration (home-manager) |
-| `secrets/secrets.plain.template` | Secrets template for homeserver — commit with empty values |
+| `secrets/secrets.plain.template` | Secrets template for selfhosted server — commit with empty values |
 | `secrets/secrets-vps.plain.template` | Secrets template for VPS — commit with empty values |
-| `secrets/secrets.yaml` | Encrypted secrets for homeserver — gitignored, lives on server only |
+| `secrets/secrets.yaml` | Encrypted secrets for selfhosted server — gitignored, lives on server only |
 | `secrets/secrets-vps.yaml` | Encrypted secrets for VPS — gitignored, lives on VPS only |
 | `.sops.yaml.template` | sops creation rules template — commit with placeholder keys |
 | `replicate-grub/` | ISOs and custom Ventoy theme for the installation USB |

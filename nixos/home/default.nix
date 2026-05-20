@@ -15,7 +15,8 @@
     enable = true;
     shellAliases = {
       ll           = "ls -la";
-      rebuild-nixos = "nixos-rebuild switch --flake /etc/nixos#$(hostname)";
+      rebuild-nixos = "nixos-rebuild build  --flake /etc/nixos#$(hostname)";
+      switch-nixos  = "nixos-rebuild switch --flake /etc/nixos#$(hostname)";
       history      = "history | tac | fzf";
     };
   };
