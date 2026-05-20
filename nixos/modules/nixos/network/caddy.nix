@@ -9,6 +9,9 @@
         "${cfg.domain}" = {
           extraConfig = ''
             root * /var/www/${cfg.domain}
+            handle /assets/library/* {
+              file_server browse
+            }
             file_server
           '';
         };
@@ -21,7 +24,13 @@
 
         "sync.${cfg.domain}" = {
           extraConfig = ''
-            reverse_proxy localhost:${toString cfg.syncthing_port}
+            forward_auth 127.0.0.1:${toString cfg.authelia_port} {
+              uri /api/authz/forward-auth
+              copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+            }
+            reverse_proxy localhost:${toString cfg.syncthing_port} {
+              header_up -Authorization
+            }
           '';
         };
 

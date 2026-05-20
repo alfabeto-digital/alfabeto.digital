@@ -11,7 +11,8 @@
       group      = "storage";
       dataDir    = "${storagePath}/helios";
       configDir  = "${exchangePath}/syncthing";
-      guiAddress = "0.0.0.0:${toString cfg.syncthing_port}";
+      guiAddress = "127.0.0.1:${toString cfg.syncthing_port}";
+      settings.gui.insecureSkipHostcheck = true;
     };
   };
 }

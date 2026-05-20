@@ -31,5 +31,7 @@
         '';
       };
     };
+
+    sops.secrets.cloudflare_token = {};
   };
 }

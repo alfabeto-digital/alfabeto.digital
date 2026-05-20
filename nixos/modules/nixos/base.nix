@@ -31,7 +31,6 @@
         443
         cfg.initrd_ssh_port
         cfg.vaultwarden_port
-        cfg.syncthing_port
       ];
     };
 
@@ -64,7 +63,6 @@
           owner = "postgres";
           mode  = "0600";
         };
-        cloudflare_token = {};
         luks_data_key = {
           mode = "0400";
         };

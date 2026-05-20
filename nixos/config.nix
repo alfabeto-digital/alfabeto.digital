@@ -88,6 +88,9 @@
   vaultwarden_port   = 8222;
   syncthing_port     = 8384;
   domain_tunnel_port = 8081;  # localhost-only HTTP for Cloudflare tunnel
+  # "cloudflare" = Cloudflare Zero Trust tunnel (cloudflare.nix)
+  # "newt"       = Pangolin Newt client (newt.nix)
+  tunnel_type = "cloudflare";
   ftp_port           = 21;
   initrd_ssh_port    = 2222;
 

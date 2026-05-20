@@ -1,6 +1,9 @@
 { inputs, self, ... }:
 let
   cfg         = import ../../../config.nix;
+  lib         = inputs.nixpkgs.lib;
+  _tunnelTypeCheck = if lib.elem cfg.tunnel_type [ "cloudflare" "newt" ] then null
+    else abort "config.nix: tunnel_type must be \"cloudflare\" or \"newt\", got \"${cfg.tunnel_type}\"";
   storagePath = "${cfg.storage_mount_point}/${cfg.storage_name}";
   dataPath    = "${cfg.data_mount_point}/${cfg.db_name}";
   pkgsUnstable = import inputs.nixpkgs-unstable { system = "x86_64-linux"; config.allowUnfree = true; };
@@ -24,8 +27,9 @@ in {
 
       # Network
       self.nixosModules.caddy
-      self.nixosModules.newt
-
+    ] ++ lib.optional (cfg.tunnel_type == "cloudflare") self.nixosModules.cloudflare
+      ++ lib.optional (cfg.tunnel_type == "newt")        self.nixosModules.newt
+      ++ [
       # Services
       self.nixosModules.vaultwarden
       self.nixosModules.syncthing
