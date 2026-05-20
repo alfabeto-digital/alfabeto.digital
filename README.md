@@ -259,10 +259,11 @@ creation_rules:
     age: "age1..."   # paste public key here
 ```
 
-Delete the VPS template — it is not needed on this machine:
+Delete the templates that are not needed on this machine:
 
 ```bash
 rm .sops-vps.yaml.template
+rm nixos/secrets/secrets-vps.plain.template
 ```
 
 `.sops.yaml` is gitignored and stays on the server only.
@@ -453,10 +454,11 @@ creation_rules:
     age: "age1..."   # paste VPS public key here
 ```
 
-Delete the selfhosted server template — it is not needed on the VPS:
+Delete the templates that are not needed on the VPS:
 
 ```bash
 rm .sops.yaml.template
+rm nixos/secrets/secrets.plain.template
 ```
 
 `.sops.yaml` is gitignored and stays on the VPS only.
