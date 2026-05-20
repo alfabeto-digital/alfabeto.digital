@@ -1,15 +1,15 @@
 # TCP passthrough: Traefik reads SNI but does NOT terminate TLS.
-# Caddy on alfabeto.digital handles TLS termination and ACME.
+# The homeserver's reverse proxy handles TLS termination and ACME.
 
 [tcp.routers]
-  [tcp.routers.alfabeto-https]
-    rule        = "HostSNIRegexp(`^(.+\\.)?alfabeto\\.digital$`)"
+  [tcp.routers.homeserver-https]
+    rule        = "HostSNIRegexp(`^(.+\\.)?<DOMAIN>$`)"
     entryPoints = ["websecure"]
     service     = "pangolin-tunnel"
-    [tcp.routers.alfabeto-https.tls]
+    [tcp.routers.homeserver-https.tls]
       passthrough = true
 
-  [tcp.routers.alfabeto-http]
+  [tcp.routers.homeserver-http]
     rule        = "HostSNI(`*`)"
     entryPoints = ["web"]
     service     = "pangolin-tunnel-http"
@@ -17,11 +17,11 @@
 [tcp.services]
   [tcp.services.pangolin-tunnel.loadBalancer]
     [[tcp.services.pangolin-tunnel.loadBalancer.servers]]
-      # WireGuard peer IP assigned to alfabeto.digital's Newt client.
+      # WireGuard peer IP assigned by Pangolin to the Newt client on the homeserver.
       # Find it in the Pangolin admin panel after Newt connects. Format: "<ip>:443"
       address = "FILL_AFTER_NEWT_CONNECTS:443"
 
   [tcp.services.pangolin-tunnel-http.loadBalancer]
     [[tcp.services.pangolin-tunnel-http.loadBalancer.servers]]
-      # Same WireGuard peer IP, port 80 (HTTP — Caddy handles redirect to HTTPS).
+      # Same WireGuard peer IP, port 80 (HTTP — homeserver handles redirect to HTTPS).
       address = "FILL_AFTER_NEWT_CONNECTS:80"

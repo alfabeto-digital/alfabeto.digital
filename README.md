@@ -69,11 +69,19 @@
 
 | Service | Description |
 |---|---|
-| nginx | Web server and reverse proxy with Let's Encrypt (ACME) |
+| caddy | Reverse proxy and HTTPS with ACME/Let's Encrypt |
 | vaultwarden | Bitwarden-compatible password manager |
 | syncthing | File synchronization |
-| postgresql | Database for quipu |
-| cloudflared | Cloudflare Zero Trust tunnel |
+| postgresql | Database server |
+| authelia | SSO / 2FA authentication portal |
+| adguardhome | DNS server with ad blocking |
+| stalwart-mail | Mail server (SMTP/IMAP) |
+| dendrite | Matrix homeserver |
+| ntfy | Push notification server |
+| cloudflare / newt | Zero Trust tunnel — configurable via `tunnel_type` in `config.nix` |
+| pangolin | WireGuard tunnel manager (VPS) |
+| gerbil | WireGuard interface manager (VPS) |
+| traefik | Reverse proxy for tunnel traffic (VPS) |
 
 ---
 
@@ -86,7 +94,7 @@ This guide assumes a server with two NVMe disks:
 - `nvme0` — OS disk (NixOS), encrypted with LUKS during the installer
 - `nvme1` — data disk (PostgreSQL), encrypted with LUKS manually before the first build
 
-The external storage disk (`virgilio`) is not encrypted at this stage.
+The external storage disk (`storage_name`) is not encrypted at this stage.
 
 ---
 
@@ -148,9 +156,17 @@ ssh -p 2222 root@<server-ip>
 
 ---
 
-### 4. Configure config.nix
+### 4. Copy `config.nix.template` and fill values
 
-All system parameters live in `nixos/config.nix`. Edit this file before the first build:
+`nixos/config.nix` is gitignored — it lives on the server only. Copy the committed
+template and fill in all values before the first build:
+
+```bash
+cp nixos/config.nix.template nixos/config.nix
+$EDITOR nixos/config.nix
+```
+
+Key fields to fill:
 
 ```nix
 {
@@ -159,51 +175,42 @@ All system parameters live in `nixos/config.nix`. Edit this file before the firs
   nixos_state_version   = "25.11";   # installation version — NEVER change after first build
 
   # System
-  hostname = "alfabetodigital";
-  timezone = "America/Bogota";
+  hostname = "";        # system hostname
+  timezone = "";        # e.g. "America/New_York"
 
-  # Locale — each LC category is independently configurable
-  locale_lang           = "en_US.UTF-8";   # LANG and LC_MESSAGES
-  locale_collate        = "C";
-  locale_time           = "es_CO.UTF-8";
-  locale_numeric        = "es_CO.UTF-8";
-  locale_monetary       = "es_CO.UTF-8";
-  locale_measurement    = "es_CO.UTF-8";
-  locale_paper          = "es_CO.UTF-8";
-  locale_address        = "es_CO.UTF-8";
-  locale_telephone      = "es_CO.UTF-8";
-  locale_name           = "es_CO.UTF-8";
-  locale_identification = "es_CO.UTF-8";
+  # Locale
+  locale_lang  = "";    # e.g. "en_US.UTF-8"
+  locale_time  = "";    # e.g. "en_US.UTF-8"
+  # ... (see config.nix.template for all locale fields)
 
   # Keyboard
-  keyboard_console = "es";   # console keymap (loadkeys)
-  keyboard_x11     = "es";   # X11 keymap     (localectl set-x11-keymap)
+  keyboard_console = "";   # console keymap (loadkeys)
+  keyboard_x11     = "";   # X11 keymap     (localectl set-x11-keymap)
 
   # Users
-  admin_username     = "coyote";
-  syncthing_username = "syncthing";
-  ftp_username       = "ftp";
+  admin_username     = "";   # primary admin user
+  admin_ssh_key      = "";   # contents of ~/.ssh/id_ed25519.pub
+  syncthing_username = "";
+  ftp_username       = "";
 
   # Database
-  db_name          = "quipu";
-  db_username      = "quipucamayoc";
+  db_name          = "";   # PostgreSQL database name
+  db_username      = "";   # PostgreSQL user
   data_mount_point = "/mnt/data";
   data_disk_uuid   = "";   # <-- fill with the nvme1 UUID from step 2
 
   # External storage
   storage_mount_point = "/mnt/storage";
-  storage_name        = "virgilio";
-  storage_uuid        = "6b668f05-9700-4bdf-9924-341bac87eed6";
+  storage_name        = "";   # disk label / directory name
+  storage_uuid        = "";   # fill from: blkid /dev/<device>
 
   # Domain & ACME
-  domain     = "alfabeto.digital";
-  email_acme = "services@alfabeto.digital";
+  domain     = "";   # primary domain
+  email_acme = "";   # contact email for Let's Encrypt
 
-  # Service ports
-  vaultwarden_port = 8222;
-  syncthing_port   = 8384;
-  ftp_port         = 21;
-  initrd_ssh_port  = 2222;
+  # Service ports (defaults are set in the template)
+  # tunnel type: "cloudflare" or "newt"
+  tunnel_type = "cloudflare";
 }
 ```
 
@@ -211,11 +218,11 @@ All system parameters live in `nixos/config.nix`. Edit this file before the firs
 
 ---
 
-### 5. Set up the age key and secrets
+### 5. Set up SSH deploy key, age key, and secrets
 
-> **Secrets strategy** — only template files (`*.plain.template`) are committed to the repo.
-> The filled plain files and the encrypted `.yaml` files are listed in `.gitignore` and must
-> never be committed. All secret work happens on the server itself.
+> **Privacy strategy** — `config.nix`, all `secrets.*` filled/encrypted files, and
+> `.sops.yaml` are listed in `.gitignore`. Only `*.template` files (with empty placeholder
+> values) are committed. All sensitive work happens on the server itself.
 
 **a) Enter a nix-shell with the required tools:**
 
@@ -231,7 +238,13 @@ age-keygen -o /root/.config/sops/age/keys.txt
 age-keygen -y /root/.config/sops/age/keys.txt   # outputs the public key — copy it
 ```
 
-Take the public key (starts with `age1...`) and update `.sops.yaml` in the repo:
+Take the public key (starts with `age1...`) and create `.sops.yaml` from the template:
+
+```bash
+cp .sops.yaml.template .sops.yaml
+```
+
+Fill in the public key for this host:
 
 ```yaml
 creation_rules:
@@ -239,7 +252,7 @@ creation_rules:
     age: "age1..."   # paste public key here
 ```
 
-Commit and push that change. The public key is **not** a secret.
+`.sops.yaml` is gitignored and stays on the server only.
 
 **c) Copy the template and fill in values:**
 
@@ -295,8 +308,8 @@ cp /etc/nixos/hardware-configuration.nix /tmp/hardware-configuration.nix
 Clone the repository and symlink the `nixos/` directory into place:
 
 ```bash
-git clone https://github.com/your-org/alfabeto.digital.git ~/alfabeto.digital
-ln -sf ~/alfabeto.digital/nixos /etc/nixos
+git clone git@github.com:<your-org>/<your-repo>.git ~/homelab
+ln -sf ~/homelab/nixos /etc/nixos
 ```
 
 Restore the machine-specific hardware configuration:
@@ -333,7 +346,7 @@ sudo nixos-rebuild switch --flake /etc/nixos#$(hostname)
 To pull the latest configuration from the repository before rebuilding:
 
 ```bash
-cd ~/alfabeto.digital
+cd ~/homelab
 git pull
 update-nixos
 ```
@@ -344,17 +357,39 @@ update-nixos
 
 ## VPS (Pangolin server) deployment
 
-The VPS runs the Pangolin/Gerbil/Traefik stack via `nixosConfigurations.vps` (auto-discovered
-by `import-tree ./modules`). It uses its **own age key**, completely separate from
-`alfabeto.digital`, so a VPS compromise cannot decrypt the main machine's secrets.
+The VPS runs the Pangolin / Gerbil / Traefik stack. Two deployment paths are available —
+choose based on the VPS operating system:
+
+| | Path A — NixOS (recommended) | Path B — Docker / Podman |
+|---|---|---|
+| OS requirement | NixOS | Any Linux with Docker or Podman |
+| Config | `config-vps.nix` (gitignored) | `vps/config/*.yaml` (edit directly) |
+| Secrets | sops-encrypted, own age key | `vps/secrets.env` (gitignored) |
+| Deploy | `nixos-rebuild switch` | `docker compose up -d` |
+| Files needed | Full repo clone | Only `vps/` directory |
+
+---
+
+### Path A — NixOS deployment
+
+The VPS uses its **own age key**, completely separate from the homeserver, so a VPS
+compromise cannot decrypt the main machine's secrets.
 
 ### Before the first deploy
 
-**1. Fill `nixos/config-vps.nix`:**
+**1. Copy `nixos/config-vps.nix.template` and fill values:**
 
+```bash
+cp nixos/config-vps.nix.template nixos/config-vps.nix
+$EDITOR nixos/config-vps.nix
+```
+
+Key fields:
 ```nix
-vps_ip        = "1.2.3.4";            # public IP of the VPS
-container_runtime = "flake";          # or "podman" / "docker"
+hostname  = "";              # VPS hostname
+domain    = "";              # same domain as homeserver
+vps_ip    = "FILL_VPS_IP";  # public IP of the VPS
+container_runtime = "flake"; # or "podman" / "docker"
 ```
 
 **2. Get or generate a NixOS installer on the VPS.**
@@ -378,7 +413,11 @@ age-keygen -o /root/.config/sops/age/keys.txt
 age-keygen -y /root/.config/sops/age/keys.txt   # copy the public key
 ```
 
-Update `.sops.yaml` in the repo with the VPS public key:
+Create `.sops.yaml` from the template and fill in the VPS public key:
+
+```bash
+cp .sops.yaml.template .sops.yaml
+```
 
 ```yaml
 creation_rules:
@@ -386,13 +425,13 @@ creation_rules:
     age: "age1..."   # paste VPS public key here
 ```
 
-Commit and push.
+`.sops.yaml` is gitignored and stays on the VPS only.
 
 **4. On the VPS, fill and encrypt the VPS secrets:**
 
 ```bash
 # Pull the latest repo commit (with the updated .sops.yaml)
-cd ~/alfabeto.digital && git pull
+cd ~/homelab && git pull
 
 cp nixos/secrets/secrets-vps.plain.template nixos/secrets/secrets-vps.plain
 $EDITOR nixos/secrets/secrets-vps.plain     # fill passwords and gerbil_pangolin_token
@@ -404,7 +443,7 @@ rm nixos/secrets/secrets-vps.plain
 **5. Build and activate:**
 
 ```bash
-nixos-rebuild switch --flake /root/alfabeto.digital/nixos#vps
+nixos-rebuild switch --flake /root/homelab/nixos#vps
 ```
 
 Or from your local machine (cross-build + deploy):
@@ -425,7 +464,129 @@ newt_peer_ip = "10.x.x.x";
 Rebuild the VPS to activate the updated Traefik routes:
 
 ```bash
-nixos-rebuild switch --flake /root/alfabeto.digital/nixos#vps
+nixos-rebuild switch --flake /root/homelab/nixos#vps
+```
+
+---
+
+### Path B — Docker / Podman deployment (any Linux)
+
+Use this path when the VPS already runs a non-NixOS Linux distribution (Ubuntu, Debian,
+Fedora, etc.) and you just want to bring up the tunnel stack quickly without converting the
+OS. It runs the exact same Traefik / Pangolin / Gerbil containers as Path A's container mode.
+
+#### Get only the VPS files (sparse checkout)
+
+If you only need the `vps/` directory and not the full NixOS configuration, use a sparse
+checkout to avoid downloading the rest of the repository:
+
+```bash
+git clone --filter=blob:none --sparse git@github.com:<your-org>/<your-repo>.git homelab-vps
+cd homelab-vps
+git sparse-checkout set vps
+```
+
+This downloads only the `vps/` directory plus the root files (`.gitignore`, `README.md`).
+You can update later with `git pull` inside `homelab-vps/`.
+
+Alternatively, if you already have a full clone, just `cd vps/`.
+
+#### Configure
+
+Edit the two config files with real values. The other files (`gerbil.yaml`, `traefik.toml`)
+work as-is and do not need changes for a standard deployment.
+
+**`vps/config/pangolin.yaml`**
+```yaml
+app:
+  base_domain: "your-domain.com"   # apex domain for Pangolin subdomains
+
+gerbil:
+  base_endpoint: "1.2.3.4"         # public IP of this VPS
+```
+
+**`vps/config/dynamic/routes.toml`** — fill the domain and the WireGuard peer IP.
+The WireGuard peer IP is only available after the first Newt connection (see step below).
+Leave `FILL_AFTER_NEWT_CONNECTS` in place until then; update and restart once you have it.
+
+```toml
+[tcp.routers.homeserver-https]
+  rule = "HostSNIRegexp(`^(.+\\.)?your-domain\\.com$`)"
+  ...
+
+[tcp.services.pangolin-tunnel.loadBalancer]
+  [[...servers]]
+    address = "10.x.x.x:443"   # WireGuard peer IP assigned by Pangolin to the Newt client
+```
+
+#### Secrets
+
+Config files live in the repo (with placeholder values). Secrets are kept in `vps/secrets.env`,
+which is gitignored and never committed. There is no sops or age key needed for this path —
+the secrets file is a plain key=value file that lives only on the VPS.
+
+```bash
+cd vps
+cp secrets.env.template secrets.env
+$EDITOR secrets.env
+```
+
+Fill in `GERBIL_PANGOLIN_TOKEN` (generate in the Pangolin admin panel: Settings → API Tokens).
+
+#### Run with Docker
+
+```bash
+cd vps
+docker compose up -d
+```
+
+To view logs:
+```bash
+docker compose logs -f
+```
+
+#### Run with Podman
+
+```bash
+cd vps
+podman compose up -d      # podman >= 4.6 with built-in compose support
+# or:
+podman-compose up -d      # pip install podman-compose
+```
+
+> Podman runs rootless by default. For Gerbil to manage WireGuard interfaces it needs
+> `NET_ADMIN` capability — run as root (`sudo podman compose up -d`) or configure
+> `allow_host_net_binds` in `/etc/sysctl.conf`.
+
+You can also use the included helper script which creates `secrets.env` automatically:
+```bash
+bash vps/setup.sh
+docker compose -f vps/docker-compose.yml up -d
+```
+
+#### After the first Newt connection
+
+Once the homeserver's Newt client connects, open the Pangolin admin panel → Sites → Peers
+and note the WireGuard IP assigned to the Newt client (`10.x.x.x`). Update `routes.toml`:
+
+```toml
+address = "10.x.x.x:443"
+address = "10.x.x.x:80"
+```
+
+Then restart Traefik to reload the config (it watches the directory, but a restart is safest):
+```bash
+docker compose restart traefik
+```
+
+#### Updating
+
+```bash
+cd homelab-vps   # or wherever your clone is
+git pull
+cd vps
+docker compose pull
+docker compose up -d
 ```
 
 ---
@@ -434,14 +595,16 @@ nixos-rebuild switch --flake /root/alfabeto.digital/nixos#vps
 
 | File | Description |
 |---|---|
-| `config.nix` | Central system variables — the only file that needs regular editing |
-| `configuration.nix` | Full declarative system configuration |
-| `flake.nix` | Nix Flakes entrypoint — reads the channel version from `config.nix` |
+| `config.nix.template` | Homeserver config template — commit with empty values |
+| `config-vps.nix.template` | VPS config template — commit with empty values |
+| `config.nix` | Homeserver config — gitignored, lives on server only |
+| `config-vps.nix` | VPS config — gitignored, lives on VPS only |
+| `flake.nix` | Nix Flakes entrypoint |
 | `hardware-configuration.nix` | Auto-generated by the installer — do not edit or commit |
 | `home/default.nix` | User environment configuration (home-manager) |
-| `secrets/secrets.plain.template` | Secrets template for alfabeto.digital — commit with empty values |
-| `secrets/secrets-vps.plain.template` | Secrets template for the VPS — commit with empty values |
-| `secrets/secrets.yaml` | Encrypted secrets for alfabeto.digital — gitignored, lives on server only |
-| `secrets/secrets-vps.yaml` | Encrypted secrets for the VPS — gitignored, lives on VPS only |
-| `00-hallucinations/` | Earlier configuration drafts kept for reference — not used in production |
+| `secrets/secrets.plain.template` | Secrets template for homeserver — commit with empty values |
+| `secrets/secrets-vps.plain.template` | Secrets template for VPS — commit with empty values |
+| `secrets/secrets.yaml` | Encrypted secrets for homeserver — gitignored, lives on server only |
+| `secrets/secrets-vps.yaml` | Encrypted secrets for VPS — gitignored, lives on VPS only |
+| `.sops.yaml.template` | sops creation rules template — commit with placeholder keys |
 | `replicate-grub/` | ISOs and custom Ventoy theme for the installation USB |

@@ -1,9 +1,15 @@
 { inputs, ... }: {
-  flake.nixosModules.database = { config, lib, pkgs, cfg, dataPath, ... }: {
-
+  flake.nixosModules.database = { config, lib, pkgs, cfg, dataPath, ... }:
+  let
+    dbMountUnit =
+      builtins.replaceStrings ["/"] ["-"]
+        (lib.removePrefix "/" "${cfg.data_mount_point}/${cfg.db_name}")
+      + ".mount";
+  in
+  {
     systemd.services.postgresql = {
-      after    = [ "mnt-data-quipu.mount" ];
-      requires = [ "mnt-data-quipu.mount" ];
+      after    = [ dbMountUnit ];
+      requires = [ dbMountUnit ];
     };
 
     services.postgresql = {

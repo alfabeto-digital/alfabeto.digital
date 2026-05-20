@@ -1,0 +1,121 @@
+# ============================================================
+# TEMPLATE — COMMIT THIS FILE. NEVER FILL VALUES HERE.
+#
+# Instructions:
+#   1. On the server, copy this file:
+#        cp nixos/config.nix.template nixos/config.nix
+#   2. Fill in all values in config.nix (on the server only).
+#   3. Build the system:
+#        nixos-rebuild switch --flake /path/to/repo/nixos#<hostname>
+#
+# config.nix is listed in .gitignore and must never be committed.
+# Only this .template file is committed.
+# ============================================================
+
+{
+  ###############################################################
+  # NixOS versions
+  ###############################################################
+
+  # Used in flake.nix to set the channel URLs for nixpkgs and home-manager.
+  nixos_channel_version = "25.11";
+
+  # Reflects the NixOS version at initial installation.
+  # Used for system.stateVersion and home.stateVersion.
+  # Must NEVER be changed after the first build.
+  nixos_state_version = "25.11";
+
+  ###############################################################
+  # System
+  ###############################################################
+
+  hostname = "";   # system hostname (used in nixosConfigurations key)
+  timezone = "";   # e.g. "America/New_York" — timedatectl list-timezones
+
+  # Locale — each LC category is configurable independently.
+  locale_lang           = "";   # LANG and LC_MESSAGES, e.g. "en_US.UTF-8"
+  locale_collate        = "";   # LC_COLLATE, e.g. "C"
+  locale_time           = "";   # LC_TIME, e.g. "en_US.UTF-8"
+  locale_numeric        = "";   # LC_NUMERIC
+  locale_monetary       = "";   # LC_MONETARY
+  locale_measurement    = "";   # LC_MEASUREMENT
+  locale_paper          = "";   # LC_PAPER
+  locale_address        = "";   # LC_ADDRESS
+  locale_telephone      = "";   # LC_TELEPHONE
+  locale_name           = "";   # LC_NAME
+  locale_identification = "";   # LC_IDENTIFICATION
+
+  # Keyboard
+  keyboard_console = "";   # console keymap  (loadkeys)
+  keyboard_x11     = "";   # X11 keymap      (localectl set-x11-keymap)
+
+  ###############################################################
+  # Users
+  ###############################################################
+
+  admin_username = "";   # primary admin user
+
+  # SSH public key for the admin user and initrd unlock.
+  # Not a secret — paste the full contents of ~/.ssh/id_ed25519.pub here.
+  admin_ssh_key = "";   # ssh-keygen -t ed25519; cat ~/.ssh/id_ed25519.pub
+
+  syncthing_username   = "";   # system account for Syncthing
+  vaultwarden_username = "";   # system account for Vaultwarden
+  ftp_username         = "";   # system account for FTP
+
+  ###############################################################
+  # Database
+  ###############################################################
+
+  db_name     = "";   # PostgreSQL database name
+  db_username = "";   # PostgreSQL user with access to db_name
+
+  # nvme1 (data disk) is mounted at: <data_mount_point>/<db_name>
+  data_mount_point = "/mnt/data";
+
+  # nvme1 LUKS UUID — fill after partitioning nvme1:
+  #   blkid /dev/nvme1n1
+  data_disk_uuid = "";   # <-- fill after installation
+
+  ###############################################################
+  # Storage (external disk)
+  ###############################################################
+
+  # Mounted at: <storage_mount_point>/<storage_name>
+  storage_mount_point = "/mnt/storage";
+  storage_name        = "";   # disk label / directory name under storage_mount_point
+
+  # External disk UUID — fill from: blkid /dev/<device>
+  storage_uuid = "";
+
+  ###############################################################
+  # Domain & ACME
+  ###############################################################
+
+  domain     = "";   # primary domain, e.g. "example.com"
+  email_acme = "";   # contact email for Let's Encrypt notifications
+
+  ###############################################################
+  # Service ports
+  ###############################################################
+
+  vaultwarden_port   = 8222;
+  syncthing_port     = 8384;
+  domain_tunnel_port = 8081;   # localhost-only HTTP for Cloudflare tunnel
+
+  # "cloudflare" = Cloudflare Zero Trust tunnel (cloudflare.nix)
+  # "newt"       = Pangolin Newt client (newt.nix)
+  tunnel_type = "cloudflare";
+
+  ftp_port        = 21;
+  initrd_ssh_port = 2222;
+
+  # Communications & security services (all internal; exposed via Caddy)
+  authelia_smtp_username = "";   # Stalwart account used by Authelia to send notifications
+
+  adguard_port  = 3000;    # AdGuard Home admin UI
+  authelia_port = 9091;    # Authelia SSO / 2FA
+  dendrite_port = 8008;    # Dendrite Matrix homeserver HTTP
+  stalwart_port = 8080;    # Stalwart Mail management
+  ntfy_port     = 2586;    # ntfy push notifications
+}

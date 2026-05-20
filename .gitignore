@@ -4,8 +4,17 @@
 # Ignore GIMP files
 *.xcf
 
-# Secrets — filled or encrypted files must NEVER be committed.
+# Config files — filled values are private and must NEVER be committed.
 # Only *.template files (with empty values) are committed.
+nixos/config.nix
+nixos/config-vps.nix
+
+# Archived draft configs — contain identifying data
+nixos/00-hallucinations/
+
+# Secrets and sops config — filled or encrypted files must NEVER be committed.
+# Only *.template files (with empty values) are committed.
+.sops.yaml
 secrets.plain
 secrets-vps.plain
 secrets.yaml
