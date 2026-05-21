@@ -54,9 +54,51 @@
       };
     };
 
+    systemd.services.stalwart-bootstrap = {
+      description = "Bootstrap Stalwart admin account";
+      wantedBy    = [ "multi-user.target" ];
+      after       = [ "stalwart-mail.service" ];
+      requires    = [ "stalwart-mail.service" ];
+      serviceConfig = {
+        Type            = "oneshot";
+        RemainAfterExit = true;
+        EnvironmentFile = "/run/stalwart-env";
+        ExecStart       = "${pkgs.writeShellScript "stalwart-bootstrap" ''
+          set -e
+          url="http://127.0.0.1:${toString cfg.stalwart_port}"
+          token="$STALWART_ADMIN_PASSWORD"
+
+          # Wait for Stalwart HTTP to be ready
+          for i in $(seq 1 30); do
+            if ${pkgs.curl}/bin/curl -sf "$url/api/principal" \
+                 -H "Authorization: Bearer $token" -o /dev/null 2>/dev/null; then
+              echo "Stalwart API ready"
+              break
+            fi
+            sleep 1
+          done
+
+          # Check if admin already exists
+          status=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $token" "$url/api/principal/admin")
+
+          if [ "$status" = "404" ]; then
+            echo "Creating admin principal"
+            ${pkgs.curl}/bin/curl -sf -X POST "$url/api/principal" \
+              -H "Authorization: Bearer $token" \
+              -H "Content-Type: application/json" \
+              -d "{\"name\":\"admin\",\"class\":\"superuser\",\"secrets\":[\"$token\"]}"
+          else
+            echo "Admin already exists (status $status), skipping"
+          fi
+        ''}";
+      };
+    };
+
     services.stalwart-mail = {
       enable   = true;
       settings = {
+        "config.local-keys" = [ "management.secret" ];
         server = {
           hostname = "mail.${cfg.domain}";
           listener = {
