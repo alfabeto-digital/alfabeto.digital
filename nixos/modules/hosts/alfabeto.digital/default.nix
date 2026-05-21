@@ -16,7 +16,7 @@ in {
         system = "x86_64-linux";
         specialArgs = {
           inherit cfg storagePath dataPath pkgsUnstable;
-          flakeDir     = self.outPath;
+          flakeDir     = configDir;
           exchangePath = "/home/${cfg.admin_username}/exchange";
         };
         modules = [

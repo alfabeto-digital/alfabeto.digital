@@ -11,7 +11,7 @@ in {
     in {
       ${cfg.hostname} = inputs.nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = { inherit cfg; flakeDir = self.outPath; };
+        specialArgs = { inherit cfg; flakeDir = configDir; };
         modules = [
           inputs.sops-nix.nixosModules.sops
           "${configDir}/hardware-configuration-vps.nix"
