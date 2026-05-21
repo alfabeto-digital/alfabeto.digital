@@ -1,6 +1,6 @@
-{ inputs, self, ... }:
+{ inputs, self, configDir, ... }:
 let
-  cfg         = import ../../../config.nix;
+  cfg         = import "${configDir}/config.nix";
   lib         = inputs.nixpkgs.lib;
   _tunnelTypeCheck = if lib.elem cfg.tunnel_type [ "cloudflare" "newt" ] then null
     else abort "config.nix: tunnel_type must be \"cloudflare\" or \"newt\", got \"${cfg.tunnel_type}\"";
@@ -18,7 +18,7 @@ in {
     modules = [
       inputs.sops-nix.nixosModules.sops
       inputs.home-manager.nixosModules.home-manager
-      ../../../hardware-configuration.nix
+      "${configDir}/hardware-configuration.nix"
 
       # Core system
       self.nixosModules.base

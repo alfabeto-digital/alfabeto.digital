@@ -3,7 +3,7 @@
     home-manager = {
       useGlobalPkgs    = true;
       useUserPackages  = true;
-      extraSpecialArgs = { admin_username = cfg.admin_username; };
+      extraSpecialArgs = { inherit cfg; admin_username = cfg.admin_username; };
       users.${cfg.admin_username} = import ../../home;
     };
   };

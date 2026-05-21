@@ -18,5 +18,8 @@
 
   outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } {
     imports = [ (inputs.import-tree ./modules) ];
+    _module.args.configDir =
+      let e = builtins.getEnv "NIXOS_CONFIG_DIR"; in
+      if e != "" then e else "/etc/nixos";
   };
 }

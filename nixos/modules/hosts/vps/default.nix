@@ -1,6 +1,6 @@
-{ inputs, self, ... }:
+{ inputs, self, configDir, ... }:
 let
-  cfg = import ../../../config-vps.nix;
+  cfg = import "${configDir}/config-vps.nix";
   lib              = inputs.nixpkgs.lib;
   _runtimeCheck    = if lib.elem cfg.container_runtime [ "flake" "podman" "docker" ] then null
     else abort "config-vps.nix: container_runtime must be flake|podman|docker, got \"${cfg.container_runtime}\"";
@@ -10,7 +10,7 @@ in {
     specialArgs = { inherit cfg; flakeDir = self.outPath; };
     modules = [
       inputs.sops-nix.nixosModules.sops
-      ../../../hardware-configuration-vps.nix
+      "${configDir}/hardware-configuration-vps.nix"
 
       ({ config, lib, pkgs, flakeDir, ... }: {
         nix.settings.experimental-features = [ "nix-command" "flakes" ];
