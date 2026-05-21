@@ -40,8 +40,9 @@ in {
             services.xserver.xkb.layout = cfg.keyboard_x11;
 
             sops = {
-              defaultSopsFile = "${flakeDir}/secrets/secrets-vps.yaml";
-              age.keyFile     = "/root/.config/sops/age/keys.txt";
+              defaultSopsFile   = "${flakeDir}/secrets/secrets-vps.yaml";
+              validateSopsFiles = false;
+              age.keyFile       = "/root/.config/sops/age/keys.txt";
               secrets = {
                 vps_root_password.neededForUsers  = true;
                 vps_admin_password.neededForUsers = true;

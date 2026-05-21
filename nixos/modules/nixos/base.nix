@@ -54,8 +54,9 @@
     services.xserver.xkb.layout = cfg.keyboard_x11;
 
     sops = {
-      defaultSopsFile = "${flakeDir}/secrets/secrets.yaml";
-      age.keyFile     = "/root/.config/sops/age/keys.txt";
+      defaultSopsFile    = "${flakeDir}/secrets/secrets.yaml";
+      validateSopsFiles  = false;
+      age.keyFile        = "/root/.config/sops/age/keys.txt";
       secrets = {
         root_password.neededForUsers  = true;
         admin_password.neededForUsers = true;
