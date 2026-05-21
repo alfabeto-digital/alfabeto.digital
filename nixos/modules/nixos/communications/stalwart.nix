@@ -94,7 +94,7 @@
           fts       = "db";
           blob      = "blobs";
           lookup    = "db";
-          directory = "memory";
+          directory = "internal";
         };
         store.db = {
           type     = "postgresql";
@@ -107,27 +107,9 @@
           type = "fs";
           path = "${exchangePath}/stalwart/blobs";
         };
-        directory.memory = {
-          type       = "memory";
-          principals = [
-            {
-              name   = "admin";
-              class  = "superuser";
-              secret = "%{env:STALWART_ADMIN_PASSWORD}%";
-            }
-            {
-              name   = cfg.authelia_smtp_username;
-              class  = "individual";
-              secret = "%{file:${config.sops.secrets.authelia_smtp_password.path}}%";
-              email  = [ "${cfg.authelia_smtp_username}@${cfg.domain}" ];
-            }
-            {
-              name   = cfg.admin_username;
-              class  = "individual";
-              secret = "%{file:${config.sops.secrets.admin_mail_password.path}}%";
-              email  = [ "${cfg.admin_username}@${cfg.domain}" ];
-            }
-          ];
+        directory.internal = {
+          type  = "internal";
+          store = "db";
         };
         management.secret = "%{env:STALWART_ADMIN_PASSWORD}%";
 
@@ -141,7 +123,6 @@
 
     sops.secrets.authelia_smtp_password  = { mode = "0444"; };
     sops.secrets.stalwart_admin_password = { owner = "stalwart-mail"; mode = "0400"; };
-    sops.secrets.admin_mail_password     = { owner = "stalwart-mail"; mode = "0400"; };
 
     networking.firewall.allowedTCPPorts = [ 25 465 143 993 ];
   };
