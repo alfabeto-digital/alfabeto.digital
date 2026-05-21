@@ -13,6 +13,14 @@
         fwdProto = lib.optionalString (cfg.tunnel_type == "cloudflare") ''
           header_up X-Forwarded-Proto https
         '';
+        authForward = ''
+          forward_auth 127.0.0.1:${toString cfg.authelia_port} {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+            header_up -Authorization
+            ${fwdProto}
+          }
+        '';
       in {
         "${h cfg.domain}" = {
           extraConfig = ''
@@ -32,11 +40,7 @@
 
         "${h "sync.${cfg.domain}"}" = {
           extraConfig = ''
-            forward_auth 127.0.0.1:${toString cfg.authelia_port} {
-              uri /api/authz/forward-auth
-              copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-              ${fwdProto}
-            }
+            ${authForward}
             reverse_proxy localhost:${toString cfg.syncthing_port} {
               header_up Host "localhost:${toString cfg.syncthing_port}"
               header_up -Authorization
@@ -58,33 +62,21 @@
 
         "${h "ntfy.${cfg.domain}"}" = {
           extraConfig = ''
-            forward_auth 127.0.0.1:${toString cfg.authelia_port} {
-              uri /api/authz/forward-auth
-              copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-              ${fwdProto}
-            }
+            ${authForward}
             reverse_proxy localhost:${toString cfg.ntfy_port}
           '';
         };
 
         "${h "mail.${cfg.domain}"}" = {
           extraConfig = ''
-            forward_auth 127.0.0.1:${toString cfg.authelia_port} {
-              uri /api/authz/forward-auth
-              copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-              ${fwdProto}
-            }
+            ${authForward}
             reverse_proxy localhost:${toString cfg.stalwart_port}
           '';
         };
 
         "${h "adguard.${cfg.domain}"}" = {
           extraConfig = ''
-            forward_auth 127.0.0.1:${toString cfg.authelia_port} {
-              uri /api/authz/forward-auth
-              copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-              ${fwdProto}
-            }
+            ${authForward}
             reverse_proxy localhost:${toString cfg.adguard_port}
           '';
         };
