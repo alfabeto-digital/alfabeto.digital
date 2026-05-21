@@ -140,8 +140,15 @@
 
     environment.systemPackages = with pkgs; [
       vim neovim git wget fzf kitty sops hostname bashtop gtop postgresql cryptsetup
-      pciutils ethtool iproute2 net-tools
+      pciutils ethtool iproute2 net-tools unzip
     ];
+
+    programs.bash.shellAliases = {
+      ll            = "ls -la";
+      rebuild-nixos = "nixos-rebuild build  --flake /etc/nixos#$(hostname) --impure";
+      switch-nixos  = "nixos-rebuild switch --flake /etc/nixos#$(hostname) --impure";
+      history       = "history | tac | fzf";
+    };
 
     systemd.tmpfiles.rules = [
       "d /home/${cfg.admin_username}/exchange 0755 ${cfg.admin_username} users - -"

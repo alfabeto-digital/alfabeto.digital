@@ -11,13 +11,5 @@
     '';
   };
 
-  programs.bash = {
-    enable = true;
-    shellAliases = {
-      ll           = "ls -la";
-      rebuild-nixos = "nixos-rebuild build  --flake /etc/nixos#$(hostname) --impure";
-      switch-nixos  = "nixos-rebuild switch --flake /etc/nixos#$(hostname) --impure";
-      history      = "history | tac | fzf";
-    };
-  };
+  programs.bash.enable = true;
 }
