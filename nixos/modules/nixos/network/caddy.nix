@@ -4,6 +4,9 @@
     services.caddy = {
       enable = true;
       email  = cfg.email_acme;
+      globalConfig = lib.optionalString (cfg.tunnel_type == "cloudflare") ''
+        default_bind 0.0.0.0 [::]
+      '';
 
       virtualHosts = let
         h = name: if cfg.tunnel_type == "cloudflare" then "http://${name}" else name;
