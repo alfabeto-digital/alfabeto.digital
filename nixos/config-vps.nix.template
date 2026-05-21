@@ -17,7 +17,8 @@
   # NixOS version
   ###############################################################
 
-  nixos_state_version = "25.11";
+  nixos_state_version = "";   # NixOS version at install time — NEVER change after first build
+                               # e.g. "23.05" if the VPS was installed on NixOS 23.05
 
   ###############################################################
   # System

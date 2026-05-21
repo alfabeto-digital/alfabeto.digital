@@ -346,14 +346,32 @@ nixos-rebuild switch --flake .#$(nix eval --raw 'import ./config.nix'.hostname)
 
 ## NixOS version management
 
-All hosts share one pinned nixpkgs defined in `flake.nix` and locked in `flake.lock`.
-`nixos_channel_version` in `config.nix` is informational only — it does not drive the
-nixpkgs URL. `nixos_state_version` reflects the NixOS version at initial installation
-and must never be changed after the first build; it can differ between hosts installed
-at different times.
+**`nixos_state_version`** (in each host's `config.nix`) must match the NixOS version at
+the time of that host's installation. It must never be changed after the first build.
+Hosts installed at different times will have different values — this is correct and expected.
 
-To upgrade nixpkgs across all hosts: edit the channel URL in `flake.nix`, then run
-`nix flake update`. Both hosts rebuild against the new pinned revision.
+**nixpkgs packages** come from the revision pinned in `flake.lock`, shared by all hosts.
+Updating `flake.lock` upgrades packages on every host that pulls the commit.
+
+**`nixos_channel_version`** in `config.nix` is informational only. The actual channel URL
+is hardcoded in `flake.nix` and must be updated there manually when upgrading.
+
+### Updating nixpkgs (both hosts)
+
+The deploy key on each server is read-only — servers can only pull. The lock is updated
+on the server but committed from the dev machine:
+
+```bash
+# 1. On the selfhosted server
+cd /etc/nixos && nix flake update
+
+# 2. On the dev machine — bring in the updated lock
+scp root@<server>:/etc/nixos/flake.lock nixos/
+git add nixos/flake.lock && git commit -m "flake: update nixpkgs" && git push
+
+# 3. On the VPS
+git pull && nixos-rebuild switch --flake /root/alfabeto.digital/nixos#vps
+```
 
 ---
 
