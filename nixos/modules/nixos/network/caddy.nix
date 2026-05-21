@@ -4,12 +4,11 @@
     services.caddy = {
       enable = true;
       email  = cfg.email_acme;
-      globalConfig = lib.optionalString (cfg.tunnel_type == "cloudflare") ''
-        auto_https off
-      '';
 
-      virtualHosts = {
-        "${cfg.domain}" = {
+      virtualHosts = let
+        h = name: if cfg.tunnel_type == "cloudflare" then "http://${name}" else name;
+      in {
+        "${h cfg.domain}" = {
           extraConfig = ''
             root * /var/www/${cfg.domain}
             handle /assets/library/* {
@@ -19,13 +18,13 @@
           '';
         };
 
-        "warden.${cfg.domain}" = {
+        "${h "warden.${cfg.domain}"}" = {
           extraConfig = ''
             reverse_proxy localhost:${toString cfg.vaultwarden_port}
           '';
         };
 
-        "sync.${cfg.domain}" = {
+        "${h "sync.${cfg.domain}"}" = {
           extraConfig = ''
             forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
@@ -37,19 +36,19 @@
           '';
         };
 
-        "auth.${cfg.domain}" = {
+        "${h "auth.${cfg.domain}"}" = {
           extraConfig = ''
             reverse_proxy localhost:${toString cfg.authelia_port}
           '';
         };
 
-        "matrix.${cfg.domain}" = {
+        "${h "matrix.${cfg.domain}"}" = {
           extraConfig = ''
             reverse_proxy localhost:${toString cfg.dendrite_port}
           '';
         };
 
-        "ntfy.${cfg.domain}" = {
+        "${h "ntfy.${cfg.domain}"}" = {
           extraConfig = ''
             forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
@@ -59,7 +58,7 @@
           '';
         };
 
-        "mail.${cfg.domain}" = {
+        "${h "mail.${cfg.domain}"}" = {
           extraConfig = ''
             forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
@@ -69,7 +68,7 @@
           '';
         };
 
-        "adguard.${cfg.domain}" = {
+        "${h "adguard.${cfg.domain}"}" = {
           extraConfig = ''
             forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
