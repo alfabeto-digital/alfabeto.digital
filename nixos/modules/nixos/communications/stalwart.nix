@@ -113,7 +113,7 @@
             {
               name   = "admin";
               class  = "superuser";
-              secret = "%{file:${config.sops.secrets.stalwart_admin_password.path}}%";
+              secret = "%{env:STALWART_ADMIN_PASSWORD}%";
             }
             {
               name   = cfg.authelia_smtp_username;
