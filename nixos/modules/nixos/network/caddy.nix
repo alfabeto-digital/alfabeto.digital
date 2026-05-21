@@ -10,6 +10,9 @@
 
       virtualHosts = let
         h = name: if cfg.tunnel_type == "cloudflare" then "http://${name}" else name;
+        fwdProto = lib.optionalString (cfg.tunnel_type == "cloudflare") ''
+          header_up X-Forwarded-Proto https
+        '';
       in {
         "${h cfg.domain}" = {
           extraConfig = ''
@@ -32,6 +35,7 @@
             forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
               copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+              ${fwdProto}
             }
             reverse_proxy localhost:${toString cfg.syncthing_port} {
               header_up -Authorization
@@ -56,6 +60,7 @@
             forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
               copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+              ${fwdProto}
             }
             reverse_proxy localhost:${toString cfg.ntfy_port}
           '';
@@ -66,6 +71,7 @@
             forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
               copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+              ${fwdProto}
             }
             reverse_proxy localhost:${toString cfg.stalwart_port}
           '';
@@ -76,6 +82,7 @@
             forward_auth 127.0.0.1:${toString cfg.authelia_port} {
               uri /api/authz/forward-auth
               copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+              ${fwdProto}
             }
             reverse_proxy localhost:${toString cfg.adguard_port}
           '';
