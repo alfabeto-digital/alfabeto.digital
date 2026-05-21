@@ -15,5 +15,5 @@
 # ============================================================
 
 creation_rules:
-  - path_regex: nixos/secrets/secrets-vps\.yaml$
+  - path_regex: nixos/secrets/secrets-vps\.(yaml|plain)$
     age: "FILL_AGE_PUBLIC_KEY"
