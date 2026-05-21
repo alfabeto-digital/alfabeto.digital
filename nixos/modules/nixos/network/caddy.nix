@@ -38,6 +38,7 @@
               ${fwdProto}
             }
             reverse_proxy localhost:${toString cfg.syncthing_port} {
+              header_up Host "localhost:${toString cfg.syncthing_port}"
               header_up -Authorization
             }
           '';
