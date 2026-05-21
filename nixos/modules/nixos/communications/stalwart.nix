@@ -111,6 +111,11 @@
           type       = "memory";
           principals = [
             {
+              name   = "admin";
+              class  = "superuser";
+              secret = "%{file:${config.sops.secrets.stalwart_admin_password.path}}%";
+            }
+            {
               name   = cfg.authelia_smtp_username;
               class  = "individual";
               secret = "%{file:${config.sops.secrets.authelia_smtp_password.path}}%";
