@@ -281,11 +281,13 @@ Generation commands for each value are documented inside the template file.
 **d) Encrypt and delete the plain file:**
 
 ```bash
-sops --encrypt nixos/secrets/secrets.plain > nixos/secrets/secrets.yaml
+sops --encrypt --input-type yaml nixos/secrets/secrets.plain > nixos/secrets/secrets.yaml
 rm nixos/secrets/secrets.plain
 ```
 
-(With `.sops.yaml` configured, `sops --encrypt` picks the age key automatically.)
+(With `.sops.yaml` configured, `sops --encrypt` picks the age key automatically.
+`--input-type yaml` is required: without it, sops treats `.plain` as binary and
+wraps everything under `data: |` instead of encrypting each key individually.)
 
 **e) Enroll `luks_data_key` in the nvme1 LUKS header:**
 
@@ -492,7 +494,7 @@ cd ~/alfabeto.digital && git pull
 cp nixos/secrets/secrets-vps.plain.template nixos/secrets/secrets-vps.plain
 $EDITOR nixos/secrets/secrets-vps.plain     # fill passwords and gerbil_pangolin_token
 
-sops --encrypt nixos/secrets/secrets-vps.plain > nixos/secrets/secrets-vps.yaml
+sops --encrypt --input-type yaml nixos/secrets/secrets-vps.plain > nixos/secrets/secrets-vps.yaml
 rm nixos/secrets/secrets-vps.plain
 ```
 

@@ -4,6 +4,9 @@
     services.caddy = {
       enable = true;
       email  = cfg.email_acme;
+      globalConfig = lib.optionalString (cfg.tunnel_type == "cloudflare") ''
+        auto_https off
+      '';
 
       virtualHosts = {
         "${cfg.domain}" = {
