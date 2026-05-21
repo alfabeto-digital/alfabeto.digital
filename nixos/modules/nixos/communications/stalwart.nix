@@ -36,10 +36,8 @@
         Type            = "oneshot";
         RemainAfterExit = true;
         ExecStart       = "${pkgs.writeShellScript "stalwart-env-setup" ''
-          printf 'STALWART_RECOVERY_ADMIN=admin:' > /run/stalwart-env
-          cat ${config.sops.secrets.stalwart_admin_password.path} >> /run/stalwart-env
-          printf '\nSTALWART_ADMIN_PASSWORD=' >> /run/stalwart-env
-          cat ${config.sops.secrets.stalwart_admin_password.path} >> /run/stalwart-env
+          pw=$(tr -d '[:space:]' < ${config.sops.secrets.stalwart_admin_password.path})
+          printf 'STALWART_RECOVERY_ADMIN=admin:%s\nSTALWART_ADMIN_PASSWORD=%s\n' "$pw" "$pw" > /run/stalwart-env
           chmod 600 /run/stalwart-env
         ''}";
       };
