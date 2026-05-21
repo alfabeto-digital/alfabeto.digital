@@ -22,5 +22,13 @@ secrets.yaml
 secrets-vps.yaml
 secrets.env
 
+# NixOS — machine-specific and build artifacts
+nixos/flake.lock
+nixos/hardware-configuration.nix
+nixos/hardware-configuration-vps.nix
+nixos/result
+nixos/result-*
+.direnv/
+
 # Claude Code settings
 .claude
