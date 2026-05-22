@@ -54,6 +54,54 @@
       };
     };
 
+    systemd.services.stalwart-bootstrap = {
+      description = "Create initial Stalwart accounts";
+      wantedBy    = [ "multi-user.target" ];
+      after       = [ "stalwart-mail.service" ];
+      wants       = [ "stalwart-mail.service" ];
+      serviceConfig = {
+        Type            = "oneshot";
+        RemainAfterExit = true;
+        EnvironmentFile = "/run/stalwart-env";
+        ExecStart       = "${pkgs.writeShellScript "stalwart-bootstrap" ''
+          url="http://127.0.0.1:${toString cfg.stalwart_port}"
+          auth="admin:$STALWART_ADMIN_PASSWORD"
+
+          for i in $(seq 1 30); do
+            code=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" \
+              -u "$auth" "$url/api/principal" 2>/dev/null)
+            [ "$code" = "200" ] && break
+            sleep 1
+          done
+
+          create_user() {
+            local name=$1 email=$2 pw_file=$3
+            local pw status
+            pw=$(tr -d '[:space:]' < "$pw_file")
+            status=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" \
+              -u "$auth" "$url/api/principal/$name")
+            if [ "$status" = "404" ]; then
+              echo "Creating $name"
+              ${pkgs.curl}/bin/curl -sf -X POST "$url/api/principal" \
+                -u "$auth" \
+                -H "Content-Type: application/json" \
+                -d "{\"name\":\"$name\",\"class\":\"individual\",\"secrets\":[\"$pw\"],\"emails\":[\"$email\"]}"
+            else
+              echo "$name already exists (status $status), skipping"
+            fi
+          }
+
+          create_user "${cfg.authelia_smtp_username}" \
+            "${cfg.authelia_smtp_username}@${cfg.domain}" \
+            "${config.sops.secrets.authelia_smtp_password.path}"
+
+          create_user "${cfg.admin_username}" \
+            "${cfg.admin_username}@${cfg.domain}" \
+            "${config.sops.secrets.admin_mail_password.path}"
+        ''}";
+      };
+    };
+
     services.stalwart-mail = {
       enable   = true;
       settings = {
@@ -128,6 +176,7 @@
 
     sops.secrets.authelia_smtp_password  = { mode = "0444"; };
     sops.secrets.stalwart_admin_password = { owner = "stalwart-mail"; mode = "0400"; };
+    sops.secrets.admin_mail_password     = {};
 
     networking.firewall.allowedTCPPorts = [ 25 465 143 993 ];
   };
