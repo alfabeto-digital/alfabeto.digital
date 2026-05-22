@@ -74,29 +74,31 @@
             sleep 1
           done
 
-          create_user() {
-            local name=$1 email=$2 pw_file=$3
-            local pw response
-            pw=$(tr -d '[:space:]' < "$pw_file")
+          create_principal() {
+            local name=$1 json=$2
+            local response
             response=$(${pkgs.curl}/bin/curl -s -u "$auth" "$url/api/principal/$name")
             if echo "$response" | grep -q '"error"'; then
               echo "Creating $name"
-              ${pkgs.curl}/bin/curl -sf -X POST "$url/api/principal" \
-                -u "$auth" \
+              ${pkgs.curl}/bin/curl -s -u "$auth" \
+                -X POST "$url/api/principal" \
                 -H "Content-Type: application/json" \
-                -d "{\"name\":\"$name\",\"class\":\"individual\",\"secrets\":[\"$pw\"],\"emails\":[\"$email\"]}"
+                -d "$json"
             else
               echo "$name already exists, skipping"
             fi
           }
 
-          create_user "${cfg.authelia_smtp_username}" \
-            "${cfg.authelia_smtp_username}@${cfg.domain}" \
-            "${config.sops.secrets.authelia_smtp_password.path}"
+          create_principal "${cfg.domain}" \
+            "{\"name\":\"${cfg.domain}\",\"type\":\"domain\"}"
 
-          create_user "${cfg.admin_username}" \
-            "${cfg.admin_username}@${cfg.domain}" \
-            "${config.sops.secrets.admin_mail_password.path}"
+          authelia_pw=$(tr -d '[:space:]' < "${config.sops.secrets.authelia_smtp_password.path}")
+          create_principal "${cfg.authelia_smtp_username}" \
+            "{\"name\":\"${cfg.authelia_smtp_username}\",\"type\":\"individual\",\"secrets\":[\"$authelia_pw\"],\"emails\":[\"${cfg.authelia_smtp_username}@${cfg.domain}\"]}"
+
+          admin_pw=$(tr -d '[:space:]' < "${config.sops.secrets.admin_mail_password.path}")
+          create_principal "${cfg.admin_username}" \
+            "{\"name\":\"${cfg.admin_username}\",\"type\":\"individual\",\"secrets\":[\"$admin_pw\"],\"emails\":[\"${cfg.admin_username}@${cfg.domain}\"]}"
         ''}";
       };
     };
