@@ -140,7 +140,7 @@
 
     environment.systemPackages = with pkgs; [
       vim neovim git wget fzf kitty sops hostname bashtop gtop postgresql cryptsetup
-      pciutils ethtool iproute2 net-tools unzip
+      pciutils ethtool iproute2 net-tools unzip python3
     ];
 
     programs.bash.shellAliases = {

@@ -94,11 +94,11 @@
 
           authelia_pw=$(tr -d '[:space:]' < "${config.sops.secrets.authelia_smtp_password.path}")
           create_principal "${cfg.authelia_smtp_username}" \
-            "{\"name\":\"${cfg.authelia_smtp_username}\",\"type\":\"individual\",\"secrets\":[\"$authelia_pw\"],\"emails\":[\"${cfg.authelia_smtp_username}@${cfg.domain}\"]}"
+            "{\"name\":\"${cfg.authelia_smtp_username}\",\"type\":\"individual\",\"secrets\":[\"$authelia_pw\"],\"emails\":[\"${cfg.authelia_smtp_username}@${cfg.domain}\"],\"roles\":[\"user\"]}"
 
           admin_pw=$(tr -d '[:space:]' < "${config.sops.secrets.admin_mail_password.path}")
           create_principal "${cfg.admin_username}" \
-            "{\"name\":\"${cfg.admin_username}\",\"type\":\"individual\",\"secrets\":[\"$admin_pw\"],\"emails\":[\"${cfg.admin_username}@${cfg.domain}\"]}"
+            "{\"name\":\"${cfg.admin_username}\",\"type\":\"individual\",\"secrets\":[\"$admin_pw\"],\"emails\":[\"${cfg.admin_username}@${cfg.domain}\"],\"roles\":[\"user\"],\"enabledPermissions\":[\"oauth-client-override\"]}"
         ''}";
       };
     };
