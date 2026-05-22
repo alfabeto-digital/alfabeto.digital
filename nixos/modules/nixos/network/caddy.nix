@@ -1,6 +1,8 @@
 { inputs, ... }: {
   flake.nixosModules.caddy = { config, lib, pkgs, cfg, ... }: {
 
+    users.users.caddy.extraGroups = [ "storage" ];
+
     services.caddy = {
       enable = true;
       email  = cfg.email_acme;
