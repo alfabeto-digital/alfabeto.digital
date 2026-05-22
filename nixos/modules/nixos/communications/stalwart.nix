@@ -76,18 +76,17 @@
 
           create_user() {
             local name=$1 email=$2 pw_file=$3
-            local pw status
+            local pw response
             pw=$(tr -d '[:space:]' < "$pw_file")
-            status=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" \
-              -u "$auth" "$url/api/principal/$name")
-            if [ "$status" = "404" ]; then
+            response=$(${pkgs.curl}/bin/curl -s -u "$auth" "$url/api/principal/$name")
+            if echo "$response" | grep -q '"error"'; then
               echo "Creating $name"
               ${pkgs.curl}/bin/curl -sf -X POST "$url/api/principal" \
                 -u "$auth" \
                 -H "Content-Type: application/json" \
                 -d "{\"name\":\"$name\",\"class\":\"individual\",\"secrets\":[\"$pw\"],\"emails\":[\"$email\"]}"
             else
-              echo "$name already exists (status $status), skipping"
+              echo "$name already exists, skipping"
             fi
           }
 
